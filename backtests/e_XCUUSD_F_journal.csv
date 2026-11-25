@@ -1,0 +1,2 @@
+close_utc,open_utc,symbol,profile,magic,tag,dir,lot,entry,sl,r_price,r_atr,atr,spread,spread_r_pct,pnl_money,pnl_r,mfe_r,mae_r,hold_min,exit,tp1,htf,vol_regime,trend_regime,clock_hour,balance_after
+2026-11-19 10:17:40,2026-11-19 09:33:40,XCUUSD,FX,580013,MIDAS_v4|SWPIV,S,1.04,12551.38,12599.38,48.00,2.103,22.83,4.20,8.75,-49.92,-1.000,0.013,0.941,44,SL,0,0,NORM,FLAT,11,4950.08
