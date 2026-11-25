@@ -68,17 +68,12 @@ code{background:#0b1220;padding:1px 5px;border-radius:4px;font-size:12px}
 </style></head><body>
 <div id="gate"><div class="box">
 <div class="brand" style="padding:0 0 8px">MIDAS Control</div>
-<p class="m" style="margin:0 0 10px">Đăng nhập bằng GitHub. Dữ liệu hiệu suất nằm trong repo <b>private</b>; trang chỉ đọc được khi token của bạn có quyền vào repo đó. Token chỉ lưu trong trình duyệt này và chỉ được gửi tới <code>api.github.com</code>.</p>
-<label>Repo dữ liệu</label><input id="g_repo" value="voq30113-bit/midas-data" style="width:100%">
-<label>GitHub token (fine-grained, chỉ quyền Contents: Read-only trên repo đó)</label><input id="g_tok" type="password" placeholder="github_pat_..." style="width:100%">
-<label style="display:flex;gap:6px;align-items:center;text-transform:none;font:13px system-ui"><input type="checkbox" id="g_rem"> Ghi nhớ trên máy này (localStorage)</label>
+<p class="m" style="margin:0 0 10px">Nhập mật khẩu để mở dữ liệu hiệu suất. Dữ liệu được mã hóa AES-256 và chỉ giải mã trong trình duyệt của bạn; mật khẩu không gửi đi đâu.</p>
+<label>Mật khẩu</label><input id="g_pw" type="password" autocomplete="current-password" style="width:100%">
+<label style="display:flex;gap:6px;align-items:center;text-transform:none;font:13px system-ui"><input type="checkbox" id="g_rem"> Ghi nhớ trên máy này</label>
 <p id="g_err" class="neg" style="min-height:20px;margin:6px 0"></p>
-<button class="btn p" id="g_go">Đăng nhập</button> <button class="btn" id="g_skip">Xem không dữ liệu</button>
-<details style="margin-top:12px" class="m"><summary>Cách tạo token</summary><ol style="padding-left:18px">
-<li>GitHub → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token.</li>
-<li>Repository access: <b>Only select repositories</b> → <code>midas-data</code>.</li>
-<li>Permissions → Repository → <b>Contents: Read-only</b>. Đặt hạn dùng ngắn (30–90 ngày).</li>
-<li>Dán token vào ô trên. Không bao giờ gửi token cho ai khác, kể cả Claude.</li></ol></details>
+<button class="btn p" id="g_go">Mở khóa</button> <button class="btn" id="g_skip">Xem không dữ liệu</button>
+<details style="margin-top:12px" class="m"><summary>Chưa đặt mật khẩu?</summary><p>Trong PowerShell chạy một lần:<br><code>python Agent\publish_performance.py --set-password --push</code><br>Mật khẩu chỉ lưu trong file cục bộ <code>Agent\.midas_pw</code> (không được commit). Dùng ít nhất 12 ký tự, vì ai cũng tải được file mã hóa và có thể thử đoán mật khẩu ngoại tuyến.</p></details>
 </div></div>
 <div class="app">
 <aside class="side"><div class="brand">MIDAS Control</div><div id="nav"></div>
@@ -301,28 +296,24 @@ const T=["V4 vàng 03–11/2026 (cơ sở)","v3.4 LEGACY vàng cùng kỳ","v3.4
 $("#bl").innerHTML=T.map((t,i)=>`<li><label style="color:inherit;font-size:14px"><input type=checkbox data-i=${i} ${S.bt[i]?"checked":""}> ${t}</label></li>`).join("");
 $("#bl").onchange=e=>{S.bt[e.target.dataset.i]=e.target.checked;save()};
 
-/* ================= auth + data (private repo) ================= */
-const AK="midas_auth";
-const getAuth=()=>{try{return JSON.parse(sessionStorage.getItem(AK)||localStorage.getItem(AK)||"null")}catch(e){return null}};
-const gh=(path,tok,raw)=>fetch("https://api.github.com"+path,{headers:{Authorization:"Bearer "+tok,Accept:raw?"application/vnd.github.raw+json":"application/vnd.github+json"}});
-let AUTH=null,TIMER=null;
-async function loadData(){if(!AUTH)return;
- const r=await gh(`/repos/${AUTH.repo}/contents/performance.json`,AUTH.tok,true);
- if(!r.ok)throw new Error(r.status==404?"Không thấy performance.json trong repo (Agent chưa đẩy dữ liệu?)":"HTTP "+r.status);
- perfSet(await r.json())}
-async function doLogin(tok,repo,remember,silent){
- const e=$("#g_err");e.textContent="";
- try{const u=await gh("/user",tok);if(!u.ok)throw new Error(u.status==401?"Token sai hoặc hết hạn":"HTTP "+u.status);const user=(await u.json()).login;
-  const rp=await gh("/repos/"+repo,tok);if(!rp.ok)throw new Error("Token không có quyền đọc repo "+repo);
-  AUTH={tok,repo,user};const st=JSON.stringify(AUTH);try{sessionStorage.removeItem(AK);localStorage.removeItem(AK);(remember?localStorage:sessionStorage).setItem(AK,st)}catch(x){}
-  $("#who").textContent="● "+user;$("#gate").classList.remove("on");
-  await loadData();clearInterval(TIMER);TIMER=setInterval(()=>loadData().catch(()=>{}),300000)}
- catch(x){if(silent){$("#gate").classList.add("on")}e.textContent=x.message}}
-$("#g_go").onclick=()=>doLogin($("#g_tok").value.trim(),$("#g_repo").value.trim(),$("#g_rem").checked);
-$("#g_tok").onkeydown=e=>{if(e.key=="Enter")$("#g_go").click()};
+/* ================= password login (data is AES-GCM encrypted, decrypted in the browser) ================= */
+const AK="midas_pw";let PW=null,TIMER=null;
+const b64=x=>Uint8Array.from(atob(x),c=>c.charCodeAt(0));
+async function decrypt(env,pw){const km=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
+ const key=await crypto.subtle.deriveKey({name:"PBKDF2",salt:b64(env.salt),iterations:env.iter,hash:"SHA-256"},km,{name:"AES-GCM",length:256},false,["decrypt"]);
+ const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(env.iv)},key,b64(env.ct));return JSON.parse(new TextDecoder().decode(pt))}
+async function loadData(pw){const r=await fetch("data/performance.enc.json?t="+Date.now());
+ if(!r.ok)throw new Error("Chưa có dữ liệu: Agent chưa chạy publish_performance.py --push");
+ let d;try{d=await decrypt(await r.json(),pw)}catch(e){throw new Error("Sai mật khẩu")}perfSet(d)}
+async function doLogin(pw,remember,silent){const e=$("#g_err");e.textContent="";
+ try{await loadData(pw);PW=pw;try{sessionStorage.removeItem(AK);localStorage.removeItem(AK);(remember?localStorage:sessionStorage).setItem(AK,pw)}catch(x){}
+  $("#who").textContent="● đã mở khóa";$("#gate").classList.remove("on");clearInterval(TIMER);TIMER=setInterval(()=>loadData(PW).catch(()=>{}),300000)}
+ catch(x){if(silent)$("#gate").classList.add("on");e.textContent=x.message}}
+$("#g_go").onclick=()=>doLogin($("#g_pw").value,$("#g_rem").checked);
+$("#g_pw").onkeydown=e=>{if(e.key=="Enter")$("#g_go").click()};
 $("#g_skip").onclick=()=>$("#gate").classList.remove("on");
-$("#signout").onclick=()=>{try{sessionStorage.removeItem(AK);localStorage.removeItem(AK)}catch(x){}AUTH=null;clearInterval(TIMER);perfSet({trades:[],runs:[],status:[],generated_utc:""});$("#who").textContent="Chưa đăng nhập";$("#g_tok").value="";$("#gate").classList.add("on")};
-{const a=getAuth();if(a){$("#g_repo").value=a.repo;doLogin(a.tok,a.repo,!!localStorage.getItem(AK),true)}else $("#gate").classList.add("on")}
+$("#signout").onclick=()=>{try{sessionStorage.removeItem(AK);localStorage.removeItem(AK)}catch(x){}PW=null;clearInterval(TIMER);perfSet({trades:[],runs:[],status:[],generated_utc:""});$("#who").textContent="Chưa đăng nhập";$("#g_pw").value="";$("#gate").classList.add("on")};
+{let a=null;try{a=sessionStorage.getItem(AK)||localStorage.getItem(AK)}catch(x){}if(a)doLogin(a,!!localStorage.getItem(AK),true);else $("#gate").classList.add("on")}
 
 /* ================= dashboard glue ================= */
 const nf=(x,d=2)=>isFinite(x)?Number(x).toFixed(d):"—";

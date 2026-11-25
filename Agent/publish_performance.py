@@ -13,8 +13,11 @@ Read-only with respect to trading: it never writes a profile and never touches M
 import csv, glob, json, os, subprocess, sys, time
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-DATA_REPO = os.environ.get("MIDAS_DATA_REPO", os.path.join(os.path.dirname(ROOT), "midas-data"))   # PRIVATE repo, read by the page after login
-OUT = os.path.join(DATA_REPO, "performance.json")
+# The page is public, the DATA is not: performance.json is encrypted (AES-256-GCM, key = PBKDF2(password)) into
+# docs/data/performance.enc.json and the browser decrypts it only after you type the password.
+OUT = os.path.join(ROOT, "docs", "data", "performance.enc.json")
+PWFILE = os.path.join(os.path.dirname(__file__), ".midas_pw")        # local only: never committed (.gitignore whitelist)
+ITER = 600000
 COMMON = os.path.join(os.environ.get("APPDATA", ""), "MetaQuotes", "Terminal", "Common", "Files", "MIDAS")
 NUM = ("lot", "entry", "sl", "r_price", "r_atr", "atr", "spread", "spread_r_pct", "pnl_money", "pnl_r", "mfe_r",
        "mae_r", "hold_min", "balance_after")
@@ -66,19 +69,40 @@ def collect():
     return {"generated_utc": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()), "trades": trades, "runs": runs, "status": status}
 
 
+def password():
+    pw = os.environ.get("MIDAS_PASSWORD")
+    if not pw and os.path.exists(PWFILE):
+        pw = open(PWFILE, encoding="utf-8").read().strip()
+    if not pw:
+        sys.exit("No password set. Run once:  python publish_performance.py --set-password")
+    return pw
+
+
+def encrypt(obj, pw):
+    import base64
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+    salt, iv = os.urandom(16), os.urandom(12)
+    key = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=ITER).derive(pw.encode("utf-8"))
+    ct = AESGCM(key).encrypt(iv, json.dumps(obj, separators=(",", ":")).encode("utf-8"), None)
+    b = lambda x: base64.b64encode(x).decode()
+    return {"v": 1, "iter": ITER, "salt": b(salt), "iv": b(iv), "ct": b(ct)}
+
+
 def build():
     data = collect()
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
-        json.dump(data, f, separators=(",", ":"))
-    print("wrote", OUT, len(data["trades"]), "trades,", len(data["runs"]), "runs")
+        json.dump(encrypt(data, password()), f, separators=(",", ":"))
+    print("wrote (encrypted)", OUT, len(data["trades"]), "trades,", len(data["runs"]), "runs")
     return data
 
 
 def push():
     def git(*a):
-        return subprocess.run(["git", "-C", DATA_REPO, *a], capture_output=True, text=True)
-    git("add", "performance.json")
+        return subprocess.run(["git", "-C", ROOT, *a], capture_output=True, text=True)
+    git("add", "docs/data/performance.enc.json", "backtests")
     if git("diff", "--cached", "--quiet").returncode == 0:
         print("nothing new to publish"); return
     msg = "Agent: update performance data " + time.strftime("%Y-%m-%d %H:%M", time.gmtime()) + " UTC"
@@ -88,6 +112,13 @@ def push():
 
 
 if __name__ == "__main__":
+    if "--set-password" in sys.argv:
+        import getpass
+        a, b = getpass.getpass("New dashboard password (12+ chars): "), getpass.getpass("Repeat: ")
+        if a != b or len(a) < 12:
+            sys.exit("Passwords differ or are shorter than 12 characters.")
+        open(PWFILE, "w", encoding="utf-8").write(a)
+        print("saved to", PWFILE, "(local only)")
     watch = int(sys.argv[sys.argv.index("--watch") + 1]) if "--watch" in sys.argv else 0
     while True:
         build()
