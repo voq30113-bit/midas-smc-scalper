@@ -7,7 +7,7 @@ Instant shocks that are NOT scheduled (flash moves) are handled inside the EA (s
 """
 import datetime as dt, json
 
-CCY = {"XAU": ["USD"], "XAG": ["USD"], "USTEC": ["USD"], "US500": ["USD"], "US30": ["USD"], "BTC": ["USD"], "ETH": ["USD"],
+CCY = {"XAUEUR": ["USD", "EUR"], "XAUGBP": ["USD", "GBP"], "XAU": ["USD"], "XAG": ["USD"], "USTEC": ["USD"], "US500": ["USD"], "US30": ["USD"], "BTC": ["USD"], "ETH": ["USD"],
        "USOIL": ["USD"], "UKOIL": ["USD"], "DE30": ["EUR"], "UK100": ["GBP"], "EURUSD": ["EUR", "USD"], "GBPUSD": ["GBP", "USD"],
        "USDJPY": ["USD", "JPY"]}
 LEAD_MIN, LAG_MIN, MERGE_MIN = 20, 30, 40
