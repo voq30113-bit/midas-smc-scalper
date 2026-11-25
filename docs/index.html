@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MIDAS Control</title>
+<style>
+:root{--bg:#f6f7f9;--fg:#1c2330;--card:#fff;--bd:#d9dde5;--ac:#2f6df6;--g:#1a8f5a;--r:#c8403f;--m:#6b7587}
+@media(prefers-color-scheme:dark){:root{--bg:#12161d;--fg:#e4e8ef;--card:#1b212b;--bd:#2d3542;--ac:#6b9bff;--g:#4cc58a;--r:#ef7b7a;--m:#8d97a8}}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,sans-serif}
+header{padding:14px 16px;border-bottom:1px solid var(--bd);font-weight:600}
+nav{display:flex;gap:4px;padding:8px 12px;flex-wrap:wrap}
+nav button{background:none;border:1px solid var(--bd);color:var(--fg);padding:6px 12px;border-radius:6px;cursor:pointer}
+nav button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+main{padding:12px 16px;max-width:1100px}
+section{display:none}section.on{display:block}
+table{border-collapse:collapse;width:100%;background:var(--card)}
+th,td{border:1px solid var(--bd);padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left}
+.wrap{overflow-x:auto}
+label{display:block;margin:6px 0 2px;color:var(--m)}
+input,select,textarea{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:5px 8px;font:inherit}
+textarea{width:100%;height:220px;font-family:ui-monospace,monospace;box-sizing:border-box}
+.row{display:flex;gap:12px;flex-wrap:wrap}.row>div{flex:1;min-width:150px}
+.pos{color:var(--g)}.neg{color:var(--r)}.m{color:var(--m)}
+.drop{border:2px dashed var(--bd);padding:24px;text-align:center;border-radius:8px;margin:8px 0}
+button.p{background:var(--ac);color:#fff;border:0;padding:7px 14px;border-radius:6px;cursor:pointer;margin-top:8px}
+li{margin:4px 0;list-style:none}
+</style></head><body>
+<header>MIDAS v4 — trang quản lý</header>
+<nav id="nav"></nav>
+<main>
+<section id="assets"><p class="m">Ảnh chụp 25/11/2026 trên Exness-MT5Trial6 (M5, ~30 ngày). "Số dư" = số dư tối thiểu để lot nhỏ nhất rủi ro không quá 1% / 2% với SL = 1,5 ATR.</p>
+<div class="wrap"><table id="at"></table></div></section>
+
+<section id="profile"><p class="m">Tạo file <code>profile_&lt;SYMBOL&gt;.ini</code> (chỉ khóa an toàn, giá trị bị chặn như trong EA). Đặt vào <code>%APPDATA%\MetaQuotes\Terminal\Common\Files\MIDAS\</code>.</p>
+<div class="row">
+<div><label>Symbol</label><input id="sym" value="XAUUSD"></div>
+<div><label>Preset</label><select id="pf"><option>GOLD<option>SILVER<option>FX<option>INDEX_US<option>INDEX_EU<option>OIL<option>CRYPTO</select></div>
+<div><label>Clock</label><select id="ck"><option>NY7<option>UTC<option>EU</select></div>
+<div><label>Session (a-b hoặc off)</label><input id="se" value="7-21"></div>
+<div><label>Blackout 1</label><input id="b1" value="16-18"></div>
+<div><label>Blackout 2</label><input id="b2" value="19-20"></div>
+<div><label>Asia / qua đêm</label><input id="as" value="0-7"></div>
+<div><label>Flat cuối tuần (0/1)</label><input id="wf" value="1"></div>
+<div><label>Giờ flat thứ Sáu</label><input id="wh" value="19"></div>
+<div><label>Max lệnh/ngày</label><input id="mt" value="3"></div>
+<div><label>Spread tối đa (×ATR)</label><input id="sa" value="0.25"></div>
+<div><label>Spread tối đa (% R)</label><input id="sr" value="15"></div>
+<div><label>SL tối đa (×ATR)</label><input id="ms" value="2.2"></div></div>
+<button class="p" id="gen">Tạo file</button> <button class="p" id="dl">Tải xuống</button>
+<textarea id="out" readonly></textarea></section>
+
+<section id="journal"><div class="drop" id="drop">Kéo thả <b>journal_*.csv</b> vào đây hoặc chọn file: <input type="file" id="f" multiple accept=".csv"></div>
+<div id="jr" class="wrap"></div></section>
+
+<section id="bt"><p class="m">Backtest cần chạy (tick thực, M5, ký quỹ $5.000). Trạng thái lưu trong trình duyệt.</p><ul id="bl"></ul></section>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const tabs=[["assets","Tài sản"],["profile","Profile"],["journal","Nhật ký lệnh"],["bt","Backtest"]];
+tabs.forEach(([id,n])=>{const b=document.createElement("button");b.textContent=n;b.onclick=()=>show(id);b.dataset.id=id;$("#nav").append(b)});
+function show(id){document.querySelectorAll("section").forEach(s=>s.classList.toggle("on",s.id==id));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.id==id))}
+show("assets");
+fetch("assets.json").then(r=>r.json()).then(d=>{
+ $("#at").innerHTML="<tr><th>Symbol<th>Vai trò<th>Giá<th>ATR M5 (bp)<th>Spread/ATR<th>Lot min<th>Rủi ro lot min ($)<th>Số dư 1%<th>Số dư 2%</tr>"+d.map(r=>`<tr><td>${r.symbol}<td>${r.role||"<span class=m>loại</span>"}<td>${r.price}<td>${r.atr_bp}<td>${r.spread_over_atr}<td>${r.min_lot}<td>${r["usd_risk_at_min_lot_sl_1.5atr"]}<td>${r.min_balance_for_1pct}<td>${r.min_balance_for_2pct}</tr>`).join("")
+}).catch(()=>{$("#at").innerHTML="<tr><td>Không tải được assets.json</tr>"});
+const P={GOLD:["NY7","7-21","16-18","19-20","0-7",1,19],SILVER:["NY7","7-21","16-18","19-20","0-7",1,19],FX:["NY7","7-21","16-18","19-20","0-7",1,19],INDEX_US:["NY7","16-23","off","off","0-16",1,22],INDEX_EU:["EU","9-17","14-15","off","0-9",1,16],OIL:["NY7","15-22","17-18","off","0-15",1,22],CRYPTO:["UTC","off","off","off","0-7",0,19]};
+$("#pf").onchange=()=>{const p=P[$("#pf").value];["ck","se","b1","b2","as","wf","wh"].forEach((k,i)=>$("#"+k).value=p[i]);gen()};
+const cl=(v,a,b)=>Math.min(b,Math.max(a,+v||a));
+function gen(){const o=["# generated by MIDAS Control","profile="+$("#pf").value,"clock="+$("#ck").value,
+ "session="+$("#se").value,"blackout1="+$("#b1").value,"blackout2="+$("#b2").value,"asia="+$("#as").value,
+ "weekend_flat="+($("#wf").value=="0"?0:1),"weekend_flat_hour="+cl($("#wh").value,0,23),"max_trades_day="+cl($("#mt").value,1,20),
+ "max_spread_atr="+cl($("#sa").value,.05,1),"max_spread_r_pct="+cl($("#sr").value,3,50),"max_sl_atr="+cl($("#ms").value,.8,4)];
+ $("#out").value=o.join("\n")+"\n"}
+$("#gen").onclick=gen;gen();
+$("#dl").onclick=()=>{gen();const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([$("#out").value]));a.download="profile_"+$("#sym").value.toUpperCase()+".ini";a.click()};
+function st(rs){const n=rs.length;let w=0,gp=0,gl=0,t=0;rs.forEach(r=>{if(r.pnl_r>0)w++;t+=r.pnl_r;if(r.pnl>0)gp+=r.pnl;else gl-=r.pnl});return{n,wr:w/n*100,exp:t/n,tot:t,pf:gl>0?gp/gl:Infinity}}
+function grp(rows,f){const g={};rows.forEach(r=>{(g[f(r)]=g[f(r)]||[]).push(r)});return Object.keys(g).sort().map(k=>[k,st(g[k])])}
+function tbl(t,g){return `<h3>${t}</h3><table><tr><th>Nhóm<th>Lệnh<th>Thắng %<th>Kỳ vọng R<th>Tổng R<th>PF</tr>`+g.map(([k,s])=>`<tr><td>${k}<td>${s.n}<td>${s.wr.toFixed(1)}<td class="${s.exp>=0?"pos":"neg"}">${s.exp.toFixed(2)}<td>${s.tot.toFixed(1)}<td>${isFinite(s.pf)?s.pf.toFixed(2):"∞"}</tr>`).join("")+"</table>"}
+function parse(txt){const L=txt.trim().split(/\r?\n/);const h=L.shift().split(",");return L.map(l=>{const c=l.split(","),o={};h.forEach((k,i)=>o[k]=c[i]);o.pnl_r=+o.pnl_r;o.pnl=+o.pnl_money;return o})}
+async function load(files){let rows=[];for(const f of files)rows=rows.concat(parse(await f.text()));
+ if(!rows.length){$("#jr").textContent="Trống";return}
+ $("#jr").innerHTML=tbl("Tất cả",[["ALL",st(rows)]])+tbl("Theo symbol",grp(rows,r=>r.symbol))+tbl("Theo setup",grp(rows,r=>r.tag.split("|").pop()))+tbl("Theo regime biến động",grp(rows,r=>r.vol_regime))+tbl("Theo quan hệ HTF",grp(rows,r=>r.trend_regime))+tbl("Theo giờ (clock profile)",grp(rows,r=>r.clock_hour.padStart(2,"0")+"h"))+tbl("Theo cách thoát",grp(rows,r=>r.exit+(r.tp1=="1"?" +TP1":"")))}
+$("#f").onchange=e=>load(e.target.files);
+$("#drop").ondragover=e=>e.preventDefault();$("#drop").ondrop=e=>{e.preventDefault();load(e.dataTransfer.files)};
+const T=["V4 vàng 03–11/2026 (cơ sở)","v3.4 LEGACY vàng cùng kỳ","v3.4 V3 vàng cùng kỳ","V4 USTEC 03–11/2026","V4 BTCUSD 03–11/2026","V4 DE30 / USOIL / XAGUSD","V4 EURUSD / USDJPY (kỳ vọng nhiều lệnh bị từ chối vì spread/R)","Vàng: blackout bật/tắt (so journal theo giờ)","Chỉ số: blackout mở cửa bật/tắt","Walk-forward: tách đôi kỳ, so kỳ vọng R"];
+let S={};try{S=JSON.parse(localStorage.getItem("mt")||"{}")}catch(x){}
+$("#bl").innerHTML=T.map((t,i)=>`<li><label><input type=checkbox data-i=${i} ${S[i]?"checked":""}> ${t}</label></li>`).join("");
+$("#bl").onchange=e=>{S[e.target.dataset.i]=e.target.checked;try{localStorage.setItem("mt",JSON.stringify(S))}catch(x){}};
+</script></body></html>
