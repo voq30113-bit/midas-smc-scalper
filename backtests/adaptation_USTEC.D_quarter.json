@@ -1,0 +1,337 @@
+{
+ "symbol": "USTEC.D",
+ "phase_kind": "quarter",
+ "default": "P5",
+ "policies": {
+  "fixed:P5": {
+   "n": 3404,
+   "R": 164.4,
+   "exp": 0.048,
+   "pf": 1.1,
+   "dd": 63.5,
+   "win": 50
+  },
+  "fixed:P5_long": {
+   "n": 1885,
+   "R": 187.6,
+   "exp": 0.1,
+   "pf": 1.2,
+   "dd": 35.8,
+   "win": 51
+  },
+  "fixed:P5_short": {
+   "n": 1519,
+   "R": -23.2,
+   "exp": -0.015,
+   "pf": 0.97,
+   "dd": 74.7,
+   "win": 48
+  },
+  "oracle": {
+   "n": 2300,
+   "R": 301.5,
+   "exp": 0.131,
+   "pf": 1.28,
+   "dd": 35.8,
+   "win": 52
+  },
+  "follow": {
+   "n": 1732,
+   "R": 118.6,
+   "exp": 0.068,
+   "pf": 1.14,
+   "dd": 36.7,
+   "win": 50
+  },
+  "experience": {
+   "n": 1803,
+   "R": 161.3,
+   "exp": 0.089,
+   "pf": 1.18,
+   "dd": 36.7,
+   "win": 51
+  },
+  "gate": {
+   "n": 3121,
+   "R": 157.7,
+   "exp": 0.051,
+   "pf": 1.1,
+   "dd": 70.9,
+   "win": 50
+  },
+  "ensemble": {
+   "n": 6808,
+   "R": 109.6,
+   "exp": 0.016,
+   "pf": 1.1,
+   "dd": 35.4,
+   "win": 50
+  }
+ },
+ "phases": [
+  {
+   "phase": "2021Q1",
+   "regime": "RANGE/HIGHVOL",
+   "follow": "P5",
+   "experience": "P5",
+   "experience_basis": "default",
+   "gate_paused": false,
+   "oracle": "P5",
+   "default_exp": 0.072,
+   "default_n": 128
+  },
+  {
+   "phase": "2021Q2",
+   "regime": "UP/LOWVOL",
+   "follow": "P5_short",
+   "experience": "P5_short",
+   "experience_basis": "RANGE/HIGHVOL",
+   "gate_paused": false,
+   "oracle": "P5",
+   "default_exp": 0.132,
+   "default_n": 150
+  },
+  {
+   "phase": "2021Q3",
+   "regime": "RANGE/LOWVOL",
+   "follow": "P5_long",
+   "experience": "P5_long",
+   "experience_basis": "UP/LOWVOL",
+   "gate_paused": false,
+   "oracle": "P5_long",
+   "default_exp": -0.156,
+   "default_n": 167
+  },
+  {
+   "phase": "2021Q4",
+   "regime": "UP/MIDVOL",
+   "follow": "P5_long",
+   "experience": "P5_long",
+   "experience_basis": "RANGE/LOWVOL",
+   "gate_paused": false,
+   "oracle": "P5_long",
+   "default_exp": -0.111,
+   "default_n": 149
+  },
+  {
+   "phase": "2022Q1",
+   "regime": "RANGE/HIGHVOL",
+   "follow": "P5_long",
+   "experience": "P5_long",
+   "experience_basis": "UP/MIDVOL",
+   "gate_paused": true,
+   "oracle": "P5_short",
+   "default_exp": 0.061,
+   "default_n": 154
+  },
+  {
+   "phase": "2022Q2",
+   "regime": "DOWN/HIGHVOL",
+   "follow": "P5_short",
+   "experience": "P5_short",
+   "experience_basis": "RANGE/HIGHVOL",
+   "gate_paused": false,
+   "oracle": "P5_long",
+   "default_exp": 0.066,
+   "default_n": 157
+  },
+  {
+   "phase": "2022Q3",
+   "regime": "RANGE/HIGHVOL",
+   "follow": "P5_long",
+   "experience": "P5_long",
+   "experience_basis": "DOWN/HIGHVOL",
+   "gate_paused": false,
+   "oracle": "P5",
+   "default_exp": 0.211,
+   "default_n": 165
+  },
+  {
+   "phase": "2022Q4",
+   "regime": "RANGE/HIGHVOL",
+   "follow": "P5_long",
+   "experience": "P5_long",
+   "experience_basis": "RANGE/HIGHVOL",
+   "gate_paused": false,
+   "oracle": "P5_long",
+   "default_exp": 0.008,
+   "default_n": 160
+  },
+  {
+   "phase": "2023Q1",
+   "regime": "UP/HIGHVOL",
+   "follow": "P5_long",
+   "experience": "P5_long",
+   "experience_basis": "RANGE/HIGHVOL",
+   "gate_paused": false,
+   "oracle": "P5_long",
+   "default_exp": 0.003,
+   "default_n": 161
+  },
+  {
+   "phase": "2023Q2",
+   "regime": "UP/LOWVOL",
+   "follow": "P5_long",
+   "experience": "P5_long",
+   "experience_basis": "UP/HIGHVOL",
+   "gate_paused": false,
+   "oracle": "P5_long",
+   "default_exp": 0.083,
+   "default_n": 156
+  },
+  {
+   "phase": "2023Q3",
+   "regime": "RANGE/LOWVOL",
+   "follow": "P5_long",
+   "experience": "P5_long",
+   "experience_basis": "UP/LOWVOL",
+   "gate_paused": false,
+   "oracle": "P5_short",
+   "default_exp": -0.013,
+   "default_n": 127
+  },
+  {
+   "phase": "2023Q4",
+   "regime": "UP/LOWVOL",
+   "follow": "P5_short",
+   "experience": "P5_short",
+   "experience_basis": "RANGE/LOWVOL",
+   "gate_paused": false,
+   "oracle": "P5_long",
+   "default_exp": 0.098,
+   "default_n": 145
+  },
+  {
+   "phase": "2024Q1",
+   "regime": "UP/LOWVOL",
+   "follow": "P5_long",
+   "experience": "P5_long",
+   "experience_basis": "UP/LOWVOL",
+   "gate_paused": false,
+   "oracle": "P5_long",
+   "default_exp": -0.004,
+   "default_n": 157
+  },
+  {
+   "phase": "2024Q2",
+   "regime": "RANGE/LOWVOL",
+   "follow": "P5_long",
+   "experience": "P5_long",
+   "experience_basis": "UP/LOWVOL",
+   "gate_paused": false,
+   "oracle": "P5",
+   "default_exp": 0.214,
+   "default_n": 127
+  },
+  {
+   "phase": "2024Q3",
+   "regime": "RANGE/MIDVOL",
+   "follow": "P5_long",
+   "experience": "P5_long",
+   "experience_basis": "RANGE/LOWVOL",
+   "gate_paused": false,
+   "oracle": "P5",
+   "default_exp": 0.049,
+   "default_n": 133
+  },
+  {
+   "phase": "2024Q4",
+   "regime": "RANGE/LOWVOL",
+   "follow": "P5_short",
+   "experience": "P5_short",
+   "experience_basis": "RANGE/MIDVOL",
+   "gate_paused": false,
+   "oracle": "P5",
+   "default_exp": 0.146,
+   "default_n": 123
+  },
+  {
+   "phase": "2025Q1",
+   "regime": "DOWN/MIDVOL",
+   "follow": "P5_short",
+   "experience": "P5_short",
+   "experience_basis": "RANGE/LOWVOL",
+   "gate_paused": false,
+   "oracle": "P5_short",
+   "default_exp": -0.101,
+   "default_n": 151
+  },
+  {
+   "phase": "2025Q2",
+   "regime": "UP/HIGHVOL",
+   "follow": "P5_short",
+   "experience": "P5_short",
+   "experience_basis": "DOWN/MIDVOL",
+   "gate_paused": false,
+   "oracle": "P5_long",
+   "default_exp": 0.015,
+   "default_n": 131
+  },
+  {
+   "phase": "2025Q3",
+   "regime": "UP/LOWVOL",
+   "follow": "P5_long",
+   "experience": "P5_long",
+   "experience_basis": "UP/HIGHVOL",
+   "gate_paused": true,
+   "oracle": "P5_long",
+   "default_exp": -0.021,
+   "default_n": 129
+  },
+  {
+   "phase": "2025Q4",
+   "regime": "RANGE/MIDVOL",
+   "follow": "P5_long",
+   "experience": "P5_long",
+   "experience_basis": "UP/LOWVOL",
+   "gate_paused": false,
+   "oracle": "P5_long",
+   "default_exp": 0.201,
+   "default_n": 123
+  },
+  {
+   "phase": "2026Q1",
+   "regime": "RANGE/MIDVOL",
+   "follow": "P5_long",
+   "experience": "P5_long",
+   "experience_basis": "RANGE/MIDVOL",
+   "gate_paused": false,
+   "oracle": "P5_short",
+   "default_exp": 0.023,
+   "default_n": 134
+  },
+  {
+   "phase": "2026Q2",
+   "regime": "UP/MIDVOL",
+   "follow": "P5_short",
+   "experience": "P5_long",
+   "experience_basis": "RANGE/MIDVOL",
+   "gate_paused": false,
+   "oracle": "P5_long",
+   "default_exp": 0.199,
+   "default_n": 147
+  },
+  {
+   "phase": "2026Q3",
+   "regime": "RANGE/MIDVOL",
+   "follow": "P5_long",
+   "experience": "P5_long",
+   "experience_basis": "UP/MIDVOL",
+   "gate_paused": false,
+   "oracle": "P5_long",
+   "default_exp": -0.152,
+   "default_n": 146
+  },
+  {
+   "phase": "2026Q4",
+   "regime": "DOWN/HIGHVOL",
+   "follow": "P5_long",
+   "experience": "P5_long",
+   "experience_basis": "RANGE/MIDVOL",
+   "gate_paused": false,
+   "oracle": "P5",
+   "default_exp": 0.313,
+   "default_n": 84
+  }
+ ]
+}
