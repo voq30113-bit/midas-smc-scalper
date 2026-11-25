@@ -66,7 +66,13 @@ def collect():
             if "=" in ln:
                 k, v = ln.strip().split("=", 1); d[k] = v
         status.append(d)
-    return {"generated_utc": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()), "trades": trades, "runs": runs, "status": status}
+    agent = {}
+    sp = os.path.join(os.path.dirname(__file__), "agent_state.json")
+    if os.path.exists(sp):
+        agent = json.load(open(sp, encoding="utf-8"))
+        lp = os.path.join(os.path.dirname(__file__), "decisions.jsonl")
+        agent["decisions"] = [json.loads(l) for l in open(lp, encoding="utf-8")][-200:] if os.path.exists(lp) else []
+    return {"generated_utc": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()), "trades": trades, "runs": runs, "status": status, "agent": agent}
 
 
 def password():
@@ -90,8 +96,25 @@ def encrypt(obj, pw):
     return {"v": 1, "iter": ITER, "salt": b(salt), "iv": b(iv), "ct": b(ct)}
 
 
+def fingerprint(data):
+    """Hash of the content without volatile timestamps, so an unchanged state is not re-encrypted and re-pushed."""
+    d = json.loads(json.dumps(data))
+    d.pop("generated_utc", None)
+    d.get("agent", {}).pop("updated_utc", None)
+    for v in d.get("agent", {}).get("regimes", {}).values():
+        v.pop("updated_utc", None)
+    for s_ in d.get("status", []):
+        s_.pop("updated_utc", None)
+    import hashlib
+    return hashlib.sha256(json.dumps(d, sort_keys=True).encode()).hexdigest()
+
+
 def build():
     data = collect()
+    fp, fpf = fingerprint(data), os.path.join(os.path.dirname(__file__), ".last_fingerprint")
+    if os.path.exists(OUT) and os.path.exists(fpf) and open(fpf).read() == fp:
+        print("unchanged - nothing to publish"); return data
+    open(fpf, "w").write(fp)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump(encrypt(data, password()), f, separators=(",", ":"))
@@ -102,12 +125,16 @@ def build():
 def push():
     def git(*a):
         return subprocess.run(["git", "-C", ROOT, *a], capture_output=True, text=True)
+    lp = os.path.join(os.path.dirname(__file__), ".last_push")
+    if os.path.exists(lp) and time.time() - os.path.getmtime(lp) < 20 * 60:
+        print("pushed recently - waiting"); return
     git("add", "docs/data/performance.enc.json", "backtests")
     if git("diff", "--cached", "--quiet").returncode == 0:
         print("nothing new to publish"); return
     msg = "Agent: update performance data " + time.strftime("%Y-%m-%d %H:%M", time.gmtime()) + " UTC"
     c = git("commit", "-m", msg)
     p = git("push")
+    open(lp, "w").write(str(time.time()))
     print((c.stdout + c.stderr + p.stdout + p.stderr).strip()[-300:])
 
 
@@ -121,6 +148,11 @@ if __name__ == "__main__":
         print("saved to", PWFILE, "(local only)")
     watch = int(sys.argv[sys.argv.index("--watch") + 1]) if "--watch" in sys.argv else 0
     while True:
+        if "--agent" in sys.argv:
+            try:
+                import agent; agent.cycle()
+            except Exception as e:
+                print("agent cycle failed:", e)
         build()
         if "--push" in sys.argv:
             push()

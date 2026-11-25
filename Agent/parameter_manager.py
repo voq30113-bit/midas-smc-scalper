@@ -4,8 +4,9 @@ import time
 
 # name: (class, max change per step %, cooldown hours)
 CLASSES = {
-    "max_trades_day": ("safe", 50, 24), "max_spread_atr": ("sensitive", 10, 48),
-    "max_spread_r_pct": ("sensitive", 10, 48), "max_sl_atr": ("sensitive", 10, 48),
+    "max_trades_day": ("safe", 50, 24), "max_sl_atr": ("sensitive", 10, 48),
+    # The owner explicitly delegated spread tuning to the Agent (wider step, short cooldown); the EA still clamps to its hard range.
+    "max_spread_atr": ("delegated", 25, 6), "max_spread_r_pct": ("delegated", 25, 6),
 }
 CRITICAL = {"InpBaseRiskPct", "InpMaxRiskPct", "InpCapitalFloorDD", "InpDailyLossPct", "InpMagic"}
 _last = {}

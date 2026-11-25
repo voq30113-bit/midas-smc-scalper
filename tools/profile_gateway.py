@@ -32,6 +32,8 @@ SAFE = {
     "max_spread_atr": ("float", 0.05, 1.0),
     "max_spread_r_pct": ("float", 3.0, 50.0),
     "max_sl_atr": ("float", 0.8, 4.0),
+    "halt_from_utc": ("datetime", None, None),
+    "halt_until_utc": ("datetime", None, None),
 }
 PROFILES = ("GOLD", "SILVER", "FX", "INDEX_US", "INDEX_EU", "OIL", "CRYPTO")
 
@@ -55,6 +57,9 @@ def validate(k, v):
         return f"{a}-{b}"
     if kind == "int":
         x = int(v); return str(max(lo, min(hi, x)))
+    if kind == "datetime":
+        import datetime as _dt
+        _dt.datetime.strptime(v, "%Y-%m-%d %H:%M"); return v
     x = float(v); return str(max(lo, min(hi, x)))
 
 
@@ -68,6 +73,20 @@ def read(p):
             ln = ln.strip()
             if ln and ln[0] not in "#;" and "=" in ln:
                 k, v = ln.split("=", 1); d[k.strip().lower()] = v.strip()
+    return d
+
+
+def update(sym, changes, remove=()):
+    """Programmatic use by the Agent: validate, merge, write atomically. Returns the resulting dict."""
+    os.makedirs(COMMON, exist_ok=True)
+    p = path(sym); d = read(p)
+    for k in remove: d.pop(k, None)
+    for k, v in changes.items(): d[k.lower()] = validate(k.lower(), str(v))
+    tmp = p + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write("# managed by the MIDAS Agent " + time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + " UTC" + chr(10))
+        for k, v in d.items(): f.write(f"{k}={v}" + chr(10))
+    os.replace(tmp, p)
     return d
 
 

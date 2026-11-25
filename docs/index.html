@@ -112,6 +112,11 @@ code{background:#0b1220;padding:1px 5px;border-radius:4px;font-size:12px}
 </section>
 
 <section id="rg">
+<div class="panel"><div class="pt">Agent: regime hiện tại (H1, dữ liệu MT5)</div><div class="wrap" id="agrg"><p class="m">Chưa có dữ liệu Agent.</p></div></div>
+<div class="panel"><div class="pt">Agent: spread của thị trường và ngưỡng đang áp dụng</div><div class="wrap" id="agsp"></div></div>
+<div class="panel"><div class="pt">Agent: tin kinh tế quan trọng sắp tới và cửa sổ tạm dừng</div><div class="wrap" id="agnw"></div></div>
+<h2>Bộ thử regime (thủ công)</h2>
+
 <p class="m">Regime Detector kiểu rule-based (đầu vào quan trọng nhất của Agent). Có trễ chống nhảy cóc (hysteresis) và nhãn kèm độ tin cậy. Dán chuỗi mẫu để thử; sau này Agent tính từ dữ liệu MT5.</p>
 <div class="row"><div><label>Nhóm tài sản</label><select id="rgrp"></select></div><div><label>Số mẫu liên tiếp để đổi regime</label><input id="rn" type="number" value="3"></div></div>
 <h3>Ngưỡng theo nhóm (sửa được)</h3><div class="wrap"><table id="rth"></table></div>
@@ -150,6 +155,9 @@ code{background:#0b1220;padding:1px 5px;border-radius:4px;font-size:12px}
 </section>
 
 <section id="dc">
+<div class="panel"><div class="pt">Nhật ký quyết định của Agent (đọc từ MT5, chuỗi băm SHA-256)</div><div class="wrap" id="aglog"><p class="m">Chưa có.</p></div></div>
+<h2>Đề xuất thủ công</h2>
+
 <p class="m">Decision Engine: 6 loại quyết định được phép. Mọi đề xuất phải có lý do, đi qua Parameter Manager, rồi vào nhật ký bất biến (chuỗi băm SHA-256, sửa một dòng thì các dòng sau hỏng).</p>
 <div class="card"><h3>Luồng 1 chu kỳ</h3><ol><li>Thu thập trạng thái bot + dữ liệu</li><li>Regime Detector</li><li>Performance Analyzer theo regime</li><li>Truy vấn Experience Store</li><li>Decision Engine tổng hợp, kèm lý do</li><li>Parameter Manager kiểm tra, từ chối hoặc điều chỉnh</li><li>Gửi Orchestration; ghi log, cập nhật Experience</li></ol></div>
 <div class="row card"><div><label>Bot (symbol)</label><input id="ds" placeholder="XAUUSD"></div><div><label>Loại</label><select id="dt"><option value="hold">Giữ nguyên<option value="switch">Chuyển profile<option value="tune">Chỉnh nhẹ tham số an toàn<option value="derisk">Giảm vốn (de-risk)<option value="pause">Tạm dừng bot<option value="alert">Cảnh báo người vận hành</select></div><div><label>Tham số (tune)</label><select id="dp"></select></div><div><label>Giá trị hiện tại</label><input id="dcur" type="number" step="any"></div><div><label>Đề xuất</label><input id="dnew" type="number" step="any"></div><div style="flex:3"><label>Lý do (bắt buộc)</label><input id="dr"></div><button class="btn p" id="dgo">Đề xuất</button></div>
@@ -327,8 +335,16 @@ function refreshAll(){
  const today=new Date().toISOString().slice(0,10),td=tr.filter(t=>t.close_utc.startsWith(today)),tds=dstats(td);
  const k=(l,v,c,h)=>`<div class="kpi"><div>${l}</div><div class="${c||""}">${v}</div>${h?`<div class="m" style="font-size:11px">${h}</div>`:""}</div>`;
  $("#ovk").innerHTML=k("Số dư",live?nf(bal,2):"—","","từ status EA")+k("Equity",live?nf(eq,2):"—")+k("Rủi ro mở",live?nf(orisk,2)+"%":"—",orisk>=S.k.k1*0.9?"warn":"",`giới hạn ${S.k.k1||4}%`)+k("Lệnh hôm nay",tds.n)+k("R hôm nay",nf(tds.R,1),tds.R>=0?"pos":"neg")+k("Tổng R (tất cả)",nf(x.R,1),x.R>=0?"pos":"neg",x.n+" lệnh");
- rbars();trender()}
-document.addEventListener("midas-data",refreshAll);
+ rbars();trender();agentPanels()}
+
+function agentPanels(){
+ const A=(perfData().agent)||{},R=A.regimes||{},SP=A.spread||{},NW=A.news||{},L=A.decisions||[];
+ const names=Object.keys(R);
+ $("#agrg").innerHTML=names.length?"<table><tr><th>Bot<th>Regime<th class=n>Tin cậy<th class=n>ADX<th class=n>ATR/TB60<th>Trên MA200<th>Cập nhật (UTC)</tr>"+names.map(k=>{const r=R[k];return `<tr><td>${k}<td><b>${r.regime}</b><td class=n>${r.confidence}<td class=n>${r.adx}<td class=n>${r.atr_ratio}<td>${r.above_ma200?"có":"không"}<td class=m>${r.updated_utc}</tr>`}).join("")+"</table>":"<p class=m>Chưa có dữ liệu Agent (MT5 phải đang mở).</p>";
+ $("#agsp").innerHTML=Object.keys(SP).length?"<table><tr><th>Bot<th class=n>Spread/ATR điển hình (20 ngày)<th class=n>5 ngày gần nhất<th class=n>Hiện tại<th class=n>p95<th class=n>Ngưỡng ×ATR đề xuất<th class=n>Ngưỡng %R đề xuất<th>Trạng thái</tr>"+Object.entries(SP).map(([k,x])=>`<tr><td>${k}<td class=n>${x.median_ratio}<td class=n>${x.recent5d_ratio}<td class=n>${x.current_ratio??"—"}<td class=n>${x.p95_ratio}<td class=n>${x.proposed_max_spread_atr}<td class=n>${x.proposed_max_spread_r_pct}<td class="${x.elevated?"warn":"pos"}">${x.elevated?"spread đang cao bất thường":"bình thường"}</tr>`).join("")+"</table>":"";
+ $("#agnw").innerHTML=Object.keys(NW).length?"<table><tr><th>Bot<th>Cửa sổ tạm dừng (UTC)<th>Sự kiện sắp tới</tr>"+Object.entries(NW).map(([k,x])=>`<tr><td>${k}<td>${x.window?x.window[0]+" → "+x.window[1]:'<span class=m>không</span>'}<td class=m>${(x.next||[]).map(e=>e[0].slice(5)+" "+e[1]).join("; ")||"—"}</tr>`).join("")+"</table>":"";
+ $("#aglog").innerHTML=L.length?"<table><tr><th>Giờ (UTC)<th>Bot<th>Loại<th>Lý do<th>Hash</tr>"+L.slice().reverse().map(d=>`<tr><td class=mono>${(d.t||"").slice(0,19).replace("T"," ")}<td>${d.bot}<td><span class="tag ${d.type=="alert"?"n":d.type=="pause"?"c":"s"}">${d.type}</span><td>${d.reason}<td class=hash>${(d.hash||"").slice(0,10)}</tr>`).join("")+"</table>":"<p class=m>Chưa có quyết định nào.</p>"}
+document.addEventListener("midas-data",()=>{refreshAll();agentPanels()});
 function bar(l,v,lim,txt,inv){const p=lim?Math.min(100,v/lim*100):0,c=p>=90?"var(--r)":p>=60?"var(--y)":"var(--ac)";return `<div class="bar"><span class="bl">${l}</span><span class="bt"><i style="width:${p}%;background:${c}"></i></span><span class="bartxt">${txt}</span></div>`}
 function rbars(){const st=(perfData().status||[]);const K=S.k;
  if(!st.length){$("#rbars").innerHTML=`<p class="m">Chưa có dữ liệu live. Khi EA v4 chạy trên MT5, nó ghi <code>status_*.ini</code> và Agent đẩy lên đây. Giới hạn đang cấu hình: rủi ro mở ${K.k1||4}%, ${K.k2||4} vị thế, lỗ ngày ${K.k5||6}%.</p>`;return}

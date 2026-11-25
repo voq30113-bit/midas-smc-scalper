@@ -40,11 +40,15 @@
 //|  7. Server clock in the tester: AUTO now means FIXED with         |
 //|     InpServerGMT (Exness = 0), not the MetaQuotes NYCLOSE guess.  |
 //|                                                                  |
+//|  v4.1: SHOCK GUARD (a bar >= InpSpikeRangeATR x ATR pauses new setups and cancels resting ones for a few bars - news,
+//|  flash moves), profile keys halt_from_utc / halt_until_utc (the Agent pauses the bot around scheduled news), funnel counters
+//|  printed at the end of every test, OnTester() score = edge x sqrt(trades) / drawdown for optimisation.
+//|
 //|  ATTACH TO AN M5 CHART.  One instance per symbol, one magic per   |
 //|  symbol, all inside [InpRiskMagicLo, InpRiskMagicHi].             |
 //+------------------------------------------------------------------+
 #property copyright "Built with Claude for Bean"
-#property version   "4.00"
+#property version   "4.10"
 #property strict
 
 #include <Trade/Trade.mqh>
@@ -75,7 +79,7 @@ enum ENUM_PROFILE
 input ENUM_PROFILE InpProfile  = PROF_AUTO;        // Built-in preset (AUTO = from the symbol name / path)
 input bool   InpUseProfileFile = true;             // Apply overrides from MIDAS\profile_<SYMBOL>.ini (Common\Files) if it exists
 input string InpProfileFile    = "";               // Custom override path ("" = MIDAS\profile_<SYMBOL>.ini)
-input int    InpProfileReloadBars = 12;            // Live only: look for a changed profile file every N M5 bars
+input int    InpProfileReloadBars = 2;             // Live only: look for a changed profile file every N M5 bars (2 = 10 min)
 
 input group "=== Broker normalisation (SET THIS PER BROKER) ==="
 enum ENUM_SRVCLOCK
@@ -187,6 +191,10 @@ input double InpLongDiscountPct= 0.50;             // How low in the range a lon
 input bool   InpShortHTFStrict = true;             // Shorts require an HTF downtrend
 input bool   InpShortUsePremDisc= true;            // Shorts only in premium
 
+input group "=== Shock guard (news / flash moves) ==="
+input double InpSpikeRangeATR  = 3.0;              // A closed M5 bar with range >= this x ATR starts a pause (0 = off)
+input int    InpSpikeCooldownBars = 6;             // ...for this many M5 bars: no new setups, resting limits cancelled
+
 input group "=== Market gates (profile defaults; the profile file may override) ==="
 input double InpMaxSpreadATR   = 0.25;             // Skip a NEW setup if spread > this x ATR
 input double InpMaxSpreadRPct  = 15.0;             // ...or if spread > this % of THIS trade's R (stop too tight to pay for)
@@ -240,6 +248,7 @@ struct SProfile
    bool   flatWeekend; int flatHour;   // Friday flatten hour on the profile clock
    int    maxTradesDay;
    double maxSpreadATR, maxSpreadRPct, maxSL_ATR;
+   datetime haltFrom, haltUntil;       // UTC window in which NO new setups are made (set by the Agent around news); 0 = none
 };
 SProfile  g_p;
 datetime  g_profStamp  = 0;             // modify time of the profile file last applied
@@ -279,6 +288,9 @@ datetime  g_modBlockBar = 0;     // M5 bar of the last MARKET_CLOSED modify repl
 int       g_atrHandle  = INVALID_HANDLE;
 double    g_atr        = 0;      // ATR(14) on M5, in price units
 int       g_minLotNotes = 0;     // log throttles
+int       g_spikeUntilBar = 0;   // shock guard: new setups blocked while g_barCounter < this
+int       g_fGrab=0, g_fMSS=0, g_fArm=0, g_fFill=0, g_fSpikes=0;   // funnel counters
+string    g_dropWhy[40]; int g_dropN[40]; int g_nDrop=0;
 int       g_rmNotes     = 0;
 
 // per-direction runner tracking
@@ -437,6 +449,7 @@ void OnDeinit(const int reason)
    ObjectsDeleteAll(0, PFX);
    Comment("");
    if(g_atrHandle != INVALID_HANDLE) IndicatorRelease(g_atrHandle);
+   PrintFunnel();
    WriteStatus("deinit");
 }
 
@@ -713,6 +726,7 @@ void PresetProfile(int prof)
    g_p.blk2 = true;  g_p.b2S = 19; g_p.b2E = 20;       // NY 12:00-13:00
    g_p.asiaS = 0;    g_p.asiaE = 7;
    g_p.flatWeekend = true; g_p.flatHour = 19;
+   g_p.haltFrom = 0; g_p.haltUntil = 0;
    g_p.maxTradesDay = InpMaxTradesDay;
    g_p.maxSpreadATR = InpMaxSpreadATR; g_p.maxSpreadRPct = InpMaxSpreadRPct; g_p.maxSL_ATR = InpMaxSL_ATR;
 
@@ -825,19 +839,33 @@ bool ApplyProfileFile()
       else if(k == "max_spread_atr")     g_p.maxSpreadATR  = ClampD(StringToDouble(v), 0.05, 1.0);
       else if(k == "max_spread_r_pct")   g_p.maxSpreadRPct = ClampD(StringToDouble(v), 3.0, 50.0);
       else if(k == "max_sl_atr")         g_p.maxSL_ATR     = ClampD(StringToDouble(v), 0.8, 4.0);
+      else if(k == "halt_from_utc" || k == "halt_until_utc")
+      {
+         string t = v; StringReplace(t, "-", "."); datetime dt = StringToTime(t);
+         if(dt > 0){ if(k == "halt_from_utc") g_p.haltFrom = dt; else g_p.haltUntil = dt; }
+      }
       else PrintFormat("PROFILE file: key '%s' is not an allowed (safe) key - ignored", k);
+   }
+   // The halt window can only STOP trading, and only briefly: <= 6 h long and starting no later than 12 h ahead.
+   if(g_p.haltUntil > 0)
+   {
+      datetime nowU = ServerToUTC(TimeCurrent());
+      if(g_p.haltFrom <= 0 || g_p.haltUntil <= g_p.haltFrom || (g_p.haltUntil - g_p.haltFrom) > 6*3600 || g_p.haltFrom > nowU + 12*3600 || g_p.haltUntil < nowU)
+      { g_p.haltFrom = 0; g_p.haltUntil = 0; }
    }
    return true;
 }
 
 string ProfileDesc()
 {
-   return StringFormat("%s clock=%s sess=%s%d-%d blk1=%s blk2=%s asia=%d-%d wkndFlat=%s@%d maxTr=%d spr=%.2fATR/%.0f%%R maxSL=%.2fATR%s",
+   return StringFormat("%s clock=%s sess=%s%d-%d blk1=%s blk2=%s asia=%d-%d wkndFlat=%s@%d maxTr=%d spr=%.2fATR/%.0f%%R maxSL=%.2fATR halt=%s%s",
           g_p.name, ClockName(), (g_p.useSession ? "" : "off:"), g_p.sessS, g_p.sessE,
           (g_p.blk1 ? StringFormat("%d-%d", g_p.b1S, g_p.b1E) : "off"),
           (g_p.blk2 ? StringFormat("%d-%d", g_p.b2S, g_p.b2E) : "off"),
           g_p.asiaS, g_p.asiaE, (g_p.flatWeekend ? "on" : "off"), g_p.flatHour, g_p.maxTradesDay,
-          g_p.maxSpreadATR, g_p.maxSpreadRPct, g_p.maxSL_ATR, (g_profFile ? " [file]" : ""));
+          g_p.maxSpreadATR, g_p.maxSpreadRPct, g_p.maxSL_ATR,
+          (g_p.haltUntil > 0 ? TimeToString(g_p.haltFrom, TIME_DATE|TIME_MINUTES) + ">" + TimeToString(g_p.haltUntil, TIME_DATE|TIME_MINUTES) : "-"),
+          (g_profFile ? " [file]" : ""));
 }
 
 void LoadProfile(bool initial)
@@ -1019,8 +1047,18 @@ bool SessionOK()
    return InWindow(ClockHour(TimeCurrent()), g_p.sessS, g_p.sessE);
 }
 
+// Shock guard + Agent halt window count as blackout: they cancel resting setups and block new ones.
+bool HaltNow()
+{
+   if(g_p.haltUntil <= 0) return false;
+   datetime u = ServerToUTC(TimeCurrent());
+   return (u >= g_p.haltFrom && u < g_p.haltUntil);
+}
+bool SpikeNow(){ return g_barCounter < g_spikeUntilBar; }
+
 bool BlackoutNow()
 {
+   if(HaltNow() || SpikeNow()) return true;
    int h = ClockHour(TimeCurrent());
    if(g_p.blk1 && InWindow(h, g_p.b1S, g_p.b1E)) return true;
    if(g_p.blk2 && InWindow(h, g_p.b2S, g_p.b2E)) return true;
@@ -2120,16 +2158,39 @@ bool FindMSSLevel(int dir, double &level)
 
 // Throttled rejection log: tells you WHY a confirmed setup did not become an order.
 int g_rejNotes = 0;
-void Reject(string why)
+void CountDrop(string why)
 {
+   for(int i=0;i<g_nDrop;i++) if(g_dropWhy[i] == why){ g_dropN[i]++; return; }
+   if(g_nDrop < 40){ g_dropWhy[g_nDrop] = why; g_dropN[g_nDrop] = 1; g_nDrop++; }
+}
+void Reject(string cat, string why)
+{
+   CountDrop("arm:" + cat);
    if(g_rejNotes < 200){ g_rejNotes++; PrintFormat("REJECT %s: %s", _Symbol, why); }
+}
+// Printed when the EA stops (every backtest): where do setups die?
+void PrintFunnel()
+{
+   string s = StringFormat("FUNNEL %s grabs=%d mss_confirmed=%d armed=%d filled=%d spikes=%d |", _Symbol, g_fGrab, g_fMSS, g_fArm, g_fFill, g_fSpikes);
+   for(int i=0;i<g_nDrop;i++) s += StringFormat(" %s=%d", g_dropWhy[i], g_dropN[i]);
+   Print(s);
+}
+
+// Optimisation score: edge x sqrt(trades) / drawdown. Rewards a real edge AND frequency; zero below 20 trades or without profit.
+double OnTester()
+{
+   double n  = TesterStatistics(STAT_TRADES);
+   double pf = TesterStatistics(STAT_PROFIT_FACTOR);
+   double dd = TesterStatistics(STAT_EQUITYDD_PERCENT);
+   if(n < 20 || TesterStatistics(STAT_PROFIT) <= 0) return 0.0;
+   return (pf - 1.0) * MathSqrt(n) / (1.0 + dd/20.0);
 }
 
 // Step 4: turn a confirmed setup into a resting limit order.
 bool ArmSetup(SSetup &s)
 {
    double lo, hi;
-   if(!ZoneFromLeg(s.dir, s.age + 1, s.sweepExt, lo, hi)) return false;
+   if(!ZoneFromLeg(s.dir, s.age + 1, s.sweepExt, lo, hi)){ CountDrop("arm:no_zone"); return false; }
    if(hi <= lo) return false;
 
    double entry, sl;
@@ -2148,21 +2209,21 @@ bool ArmSetup(SSetup &s)
 
    double R = MathAbs(entry - sl);
    if(R <= 0) return false;
-   if(g_p.maxSL_ATR > 0 && R > g_p.maxSL_ATR*g_atr){ Reject(StringFormat("stop %.2f ATR > max %.2f", R/g_atr, g_p.maxSL_ATR)); return false; }
+   if(g_p.maxSL_ATR > 0 && R > g_p.maxSL_ATR*g_atr){ Reject("stop_too_wide", StringFormat("stop %.2f ATR > max %.2f", R/g_atr, g_p.maxSL_ATR)); return false; }
 
    // The limit must sit the correct side of the market, clear of the stops level.
    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
    double minD = MinStopDistance();
-   if(s.dir > 0 && entry > ask - minD) return false;                  // price already past the zone
-   if(s.dir < 0 && entry < bid + minD) return false;
+   if(s.dir > 0 && entry > ask - minD){ CountDrop("arm:price_past_zone"); return false; }   // price already past the zone
+   if(s.dir < 0 && entry < bid + minD){ CountDrop("arm:price_past_zone"); return false; }
 
    // Trade-level spread gate: the spread is a cost paid in R. A stop this tight on
    // a market this wide is a bad trade however good the setup looks.
    double spr = ask - bid;
    if(g_p.maxSpreadRPct > 0 && spr > 0 && spr > g_p.maxSpreadRPct/100.0*R)
    {
-      Reject(StringFormat("spread %.1f%% of R > max %.0f%%", spr/R*100.0, g_p.maxSpreadRPct));
+      Reject("spread_vs_R", StringFormat("spread %.1f%% of R > max %.0f%%", spr/R*100.0, g_p.maxSpreadRPct));
       return false;
    }
 
@@ -2172,25 +2233,25 @@ bool ArmSetup(SSetup &s)
       double legHi = H(g_m5,1), legLo = L(g_m5,1);
       for(int i=1;i<=span;i++){ legHi = MathMax(legHi, H(g_m5,i)); legLo = MathMin(legLo, L(g_m5,i)); }
       double mid = (legHi + legLo) / 2.0;
-      if(s.dir > 0 && InpLongUsePremDisc  && entry > legLo + InpLongDiscountPct*(legHi-legLo)) return false;
-      if(s.dir < 0 && InpShortUsePremDisc && entry < mid) return false;
+      if(s.dir > 0 && InpLongUsePremDisc  && entry > legLo + InpLongDiscountPct*(legHi-legLo)){ CountDrop("arm:range_filter"); return false; }
+      if(s.dir < 0 && InpShortUsePremDisc && entry < mid){ CountDrop("arm:range_filter"); return false; }
    }
 
    // A real pool must be within reach, otherwise there is nothing to target.
    double t1, t2;
    int nPools = (s.dir > 0) ? LiquidityAbove(entry, InpMinTP1_R*R, t1, t2)
                             : LiquidityBelow(entry, InpMinTP1_R*R, t1, t2);
-   if(InpRequirePool && nPools < 1) return false;
+   if(InpRequirePool && nPools < 1){ CountDrop("arm:no_pool_ahead"); return false; }
 
    double lot = CalcLot(s.dir > 0, entry, sl);
-   if(lot <= 0) return false;
+   if(lot <= 0){ CountDrop("arm:lot_zero"); return false; }
 
    entry = NormalizeDouble(entry, g_digits);
    sl    = NormalizeDouble(sl,    g_digits);
 
    // Account-wide gate (all MIDAS magics, all symbols).
    double newRisk = RiskToStop(_Symbol, s.dir > 0, lot, entry, sl);
-   if(!RiskMgrOK(newRisk)) return false;
+   if(!RiskMgrOK(newRisk)){ CountDrop("arm:risk_mgr"); return false; }
 
    string kindTxt = (s.poolKind==1 ? "ASIA" : (s.poolKind==2 ? "PDHL" : "PIV"));
    s.tag = InpComment + "|SW" + kindTxt;                              // tag so reports can split by setup
@@ -2210,6 +2271,7 @@ bool ArmSetup(SSetup &s)
    s.entry    = entry; s.sl = sl; s.riskDist = R;
    s.lot      = lot; s.riskMoney = newRisk; s.spread = spr;
    s.state    = ST_ARMED;
+   g_fArm++;
    PrintFormat("ARM %s %s pool=%s(%s) sweep=%s zone=%s-%s entry=%s sl=%s R=%.2fATR atr=%s lot=%.2f risk=%.2f",
                _Symbol, (s.dir>0?"LONG":"SHORT"), DoubleToString(s.poolPrice,g_digits), kindTxt, DoubleToString(s.sweepExt,g_digits),
                DoubleToString(lo,g_digits), DoubleToString(hi,g_digits), DoubleToString(entry,g_digits), DoubleToString(sl,g_digits),
@@ -2221,7 +2283,7 @@ void CancelSetup(SSetup &s, string why)
 {
    if(s.ticket > 0 && OrderSelect(s.ticket)) trade.OrderDelete(s.ticket);
    if(s.state != ST_NONE)
-      PrintFormat("DROP %s setup (%s)", (s.dir>0?"LONG":"SHORT"), why);
+      { CountDrop("drop:" + why); PrintFormat("DROP %s setup (%s)", (s.dir>0?"LONG":"SHORT"), why); }
    ClearSetup(s);
 }
 
@@ -2244,6 +2306,7 @@ void SyncFills(SSetup &s, bool isLong)
       else       ResolveShortTargets(fill, s.riskDist, tp1, tp2);
 
       RecordTrade();
+      g_fFill++;
       RegisterNewPosition(isLong, s.riskDist, tp1);
       JournalOpen(isLong, tk, s);
       PrintFormat("FILL %s %s @%s tp1=%s R=%s", _Symbol, (isLong?"LONG":"SHORT"), DoubleToString(fill,g_digits),
@@ -2278,6 +2341,7 @@ void ProcessSide(SSetup &s, int dir, bool allowNew)
    {
       if(!allowNew) return;
       bool shifted = isLong ? (C(g_m5,1) > s.mssLevel) : (C(g_m5,1) < s.mssLevel);
+      if(shifted) g_fMSS++;
       if(shifted && !ArmSetup(s))
          CancelSetup(s, "MSS confirmed but no tradable zone");
       return;
@@ -2304,6 +2368,7 @@ void ProcessSide(SSetup &s, int dir, bool allowNew)
    if(isLong  && mss <= ext) return;                    // nothing above to break
    if(!isLong && mss >= ext) return;
 
+   g_fGrab++;
    s.state = ST_SWEPT; s.dir = dir; s.age = 0;
    s.poolPrice = pool; s.poolKind = kind; s.sweepExt = ext; s.mssLevel = mss;
    if(isLong) g_lastGrabBarL = g_barCounter; else g_lastGrabBarS = g_barCounter;
@@ -2679,6 +2744,12 @@ void OnTick()
    if(CopyRates(_Symbol, PERIOD_CURRENT, 0, need, g_m5) < 50) return;
    if(!RefreshATR()) return;
 
+   // Shock guard: a closed bar this violent (news, flash move) means price discovery, not a clean sweep.
+   if(InpSpikeRangeATR > 0 && (H(g_m5,1) - L(g_m5,1)) >= InpSpikeRangeATR*g_atr)
+   {
+      if(!SpikeNow()) g_fSpikes++;
+      g_spikeUntilBar = g_barCounter + MathMax(1, InpSpikeCooldownBars);
+   }
    ReloadProfileIfChanged();
    UpdateM5Structure();
    UpdateHTFBias();
