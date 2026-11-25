@@ -52,7 +52,7 @@
 //|  symbol, all inside [InpRiskMagicLo, InpRiskMagicHi].             |
 //+------------------------------------------------------------------+
 #property copyright "Built with Claude for Bean"
-#property version   "4.40"
+#property version   "4.50"
 #property strict
 
 #include <Trade/Trade.mqh>
@@ -321,6 +321,7 @@ datetime  g_modBlockBar = 0;     // M5 bar of the last MARKET_CLOSED modify repl
 int       g_atrHandle  = INVALID_HANDLE;
 int       g_hEmaF = INVALID_HANDLE, g_hEmaS = INVALID_HANDLE, g_hAdx = INVALID_HANDLE, g_hEmaH = INVALID_HANDLE;   // pullback engine
 int       g_pbLastBar = -999;
+int       g_k = 1;               // bar scale (M1 = 5)
 long      g_orbDay = -1;
 int       g_orbCount = 0;
 double    g_atr        = 0;      // ATR(14) on M5, in price units
@@ -426,9 +427,11 @@ int OnInit()
    g_contract = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_CONTRACT_SIZE);
    if(g_contract <= 0) g_contract = 1.0;
 
-   if(Period() != PERIOD_M5)
-      PrintFormat("MIDAS v4 WARNING: attached to %s - the engine is built for M5. Pools, ATR and the journal assume M5 bars.",
-                  EnumToString((ENUM_TIMEFRAMES)Period()));
+   {
+      int tfm = (int)(PeriodSeconds(PERIOD_CURRENT) / 60);
+      g_k = (tfm > 0 && tfm < 5) ? 5 / tfm : 1;      // bars-per-M5: M1 -> 5, M5 and above -> 1 (scales the day-long look-backs)
+      PrintFormat("MIDAS v4 base timeframe %s (bar scale x%d). Bar-count inputs are in BARS of this timeframe.", EnumToString((ENUM_TIMEFRAMES)Period()), g_k);
+   }
    if(InpMagic < InpRiskMagicLo || InpMagic > InpRiskMagicHi)
       PrintFormat("MIDAS v4 WARNING: magic %I64d is outside the Risk Manager range [%I64d..%I64d] - this instance's risk will NOT be counted.",
                   InpMagic, InpRiskMagicLo, InpRiskMagicHi);
@@ -452,14 +455,14 @@ int OnInit()
                      "balance or leave it 0 to auto-detect.", InpFundedStartBal, liveBal);
    }
 
-   g_atrHandle = iATR(_Symbol, PERIOD_M5, 14);
+   g_atrHandle = iATR(_Symbol, PERIOD_CURRENT, 14);
    if(g_atrHandle == INVALID_HANDLE){ Print("MIDAS v4: ATR handle failed"); return(INIT_FAILED); }
 
    if(InpEntryEngine == ENGINE_PULLBACK)
    {
-      g_hEmaF = iMA(_Symbol, PERIOD_M5, InpPbFast, 0, MODE_EMA, PRICE_CLOSE);
-      g_hEmaS = iMA(_Symbol, PERIOD_M5, InpPbSlow, 0, MODE_EMA, PRICE_CLOSE);
-      g_hAdx  = iADX(_Symbol, PERIOD_M5, 14);
+      g_hEmaF = iMA(_Symbol, PERIOD_CURRENT, InpPbFast, 0, MODE_EMA, PRICE_CLOSE);
+      g_hEmaS = iMA(_Symbol, PERIOD_CURRENT, InpPbSlow, 0, MODE_EMA, PRICE_CLOSE);
+      g_hAdx  = iADX(_Symbol, PERIOD_CURRENT, 14);
       if(InpPbHTFEma > 0) g_hEmaH = iMA(_Symbol, PERIOD_H1, InpPbHTFEma, 0, MODE_EMA, PRICE_CLOSE);
       if(g_hEmaF == INVALID_HANDLE || g_hEmaS == INVALID_HANDLE || g_hAdx == INVALID_HANDLE || (InpPbHTFEma > 0 && g_hEmaH == INVALID_HANDLE))
       { Print("MIDAS v4.2: pullback indicator handles failed"); return(INIT_FAILED); }
@@ -1560,7 +1563,7 @@ void AddSessionPools(double tol)
    long yday  = -1;
    double aH=0, aL=0; int aHi=0, aLi=0;
    double pH=0, pL=0; int pHi=0, pLi=0;
-   int n = MathMin(ArraySize(g_m5)-1, 620);      // >2 UTC days, independent of InpPoolLookback
+   int n = MathMin(ArraySize(g_m5)-1, 620 * g_k);      // >2 UTC days, independent of InpPoolLookback
 
    for(int i=1;i<=n;i++)
    {
@@ -1592,7 +1595,7 @@ void BuildPools()
    ArrayResize(g_bsl, 0);
    ArrayResize(g_ssl, 0);
    if(g_atr <= 0) return;
-   BuildBodyExtremes(MathMin(ArraySize(g_m5)-1, 620));
+   BuildBodyExtremes(MathMin(ArraySize(g_m5)-1, 620 * g_k));
    double tol = InpEqTolATR * g_atr;
    int w    = InpPoolPivot;
    int last = MathMin(InpPoolLookback, ArraySize(g_m5)-1) - w;
@@ -2881,7 +2884,7 @@ void TryPullback()
 bool TodayAsiaRange(long today, double &hi, double &lo)
 {
    hi = 0; lo = 0; int cnt = 0, seen = 0;
-   int n = MathMin(ArraySize(g_m5) - 1, 620);
+   int n = MathMin(ArraySize(g_m5) - 1, 620 * g_k);
    for(int i = 1; i <= n; i++)
    {
       if(ClockDayKey(g_m5[i].time) != today){ if(seen > 0) break; continue; }
@@ -2967,7 +2970,7 @@ void OnTick()
    g_barCounter++;
 
    // 620 bars covers >2 days so PDH/PDL and the overnight range are always available.
-   int need = MathMax(MathMax(InpStructLookback, InpPoolLookback) + 10, 620);
+   int need = MathMax(MathMax(InpStructLookback, InpPoolLookback) + 10, 620 * g_k);
    if(CopyRates(_Symbol, PERIOD_CURRENT, 0, need, g_m5) < 50) return;
    if(!RefreshATR()) return;
 
