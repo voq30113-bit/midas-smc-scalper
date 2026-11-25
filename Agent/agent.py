@@ -26,7 +26,7 @@ import regime_detector as rd
 HERE = os.path.dirname(__file__)
 STATE = os.path.join(HERE, "agent_state.json")
 LOG = os.path.join(HERE, "decisions.jsonl")
-BOTS = [{"symbol": "XAUUSD", "group": "gold"}, {"symbol": "USTEC", "group": "index"}, {"symbol": "BTCUSD", "group": "crypto"}]
+BOTS = [{"symbol": "XAUUSD", "group": "gold"}]          # only the validated bot; add symbols here after they pass out-of-sample on Exness
 
 
 def adx_atr(bars):
