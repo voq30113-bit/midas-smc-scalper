@@ -1,0 +1,2 @@
+close_utc,open_utc,symbol,profile,magic,tag,dir,lot,entry,sl,r_price,r_atr,atr,spread,spread_r_pct,pnl_money,pnl_r,mfe_r,mae_r,hold_min,exit,tp1,htf,vol_regime,trend_regime,clock_hour,balance_after
+2026-03-06 09:04:40,2026-03-05 18:52:20,NZDUSD,FX,580104,MIDAS_v4|SWPIV,L,0.52,0.58810,0.58715,0.00095,1.805,0.00053,0.00012,12.63,82.68,1.674,3.579,0.895,852,SL,1,0,HIGH,FLAT,20,5082.68

@@ -1,0 +1,3 @@
+close_utc,open_utc,symbol,profile,magic,tag,dir,lot,entry,sl,r_price,r_atr,atr,spread,spread_r_pct,pnl_money,pnl_r,mfe_r,mae_r,hold_min,exit,tp1,htf,vol_regime,trend_regime,clock_hour,balance_after
+2025-04-04 09:45:40,2025-04-04 08:35:20,USDCAD,FX,580102,MIDAS_v4|SWPIV,S,0.29,1.41418,1.41656,0.00238,2.468,0.00096,0.00010,4.20,-48.72,-0.998,0.563,0.975,70,SL,0,0,NORM,FLAT,11,4951.28
+2025-10-10 16:00:00,2025-10-10 15:45:40,USDCAD,FX,580102,MIDAS_v4|SWPIV,L,0.46,1.39949,1.39803,0.00146,2.008,0.00073,0.00011,7.53,13.47,0.281,0.534,0.158,14,EA,0,0,HIGH,FLAT,18,4964.75
