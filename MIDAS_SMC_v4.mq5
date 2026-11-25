@@ -44,11 +44,15 @@
 //|  flash moves), profile keys halt_from_utc / halt_until_utc (the Agent pauses the bot around scheduled news), funnel counters
 //|  printed at the end of every test, OnTester() score = edge x sqrt(trades) / drawdown for optimisation.
 //|
+//|  v4.2: second entry engine ENGINE_PULLBACK = trend scalper (pullback to the fast EMA inside an ADX-confirmed trend,
+//|  market entry on the confirmation bar, stop beyond the pullback, TP1 in R). Built for frequency (hundreds of trades a year)
+//|  and for instruments where the sweep/MSS reversal has no edge (indices). ENGINE_SWEEP is the v4.1 logic, unchanged.
+//|
 //|  ATTACH TO AN M5 CHART.  One instance per symbol, one magic per   |
 //|  symbol, all inside [InpRiskMagicLo, InpRiskMagicHi].             |
 //+------------------------------------------------------------------+
 #property copyright "Built with Claude for Bean"
-#property version   "4.10"
+#property version   "4.30"
 #property strict
 
 #include <Trade/Trade.mqh>
@@ -63,6 +67,25 @@ input string InpComment        = "MIDAS_v4";       // Order comment prefix (setu
 
 enum ENUM_DIR { DIR_BOTH=0, DIR_LONG_ONLY=1, DIR_SHORT_ONLY=2 };
 input ENUM_DIR InpDirection    = DIR_BOTH;         // Which side(s) may trade
+
+enum ENUM_ENGINE { ENGINE_SWEEP = 0, ENGINE_PULLBACK = 1 };
+input ENUM_ENGINE InpEntryEngine = ENGINE_SWEEP;    // SWEEP = liquidity grab -> MSS -> limit. PULLBACK = trend scalper (many trades)
+
+input group "=== PULLBACK engine (trend scalper) ==="
+input int    InpPbFast         = 20;               // Fast EMA (M5) - the value area price pulls back to
+input int    InpPbSlow         = 50;               // Slow EMA (M5) - trend = fast above/below slow and price on the right side
+input double InpPbAdxMin       = 20.0;             // ADX(14, M5) must be at least this (0 = off)
+input int    InpPbHTFEma       = 50;               // H1 EMA period whose slope must agree with the trade (0 = off)
+input double InpPbTouchATR     = 0.15;             // The trigger bar low/high must come within this x ATR of the fast EMA
+input double InpPbMinBodyATR   = 0.25;             // Trigger candle body >= this x ATR (real rejection, not a doji)
+input double InpPbSLBufATR     = 0.20;             // Stop beyond the pullback extreme, x ATR
+input double InpPbMinSL_ATR    = 0.60;             // Skip if the stop is tighter than this x ATR (spread would eat it)
+input double InpPbMaxSL_ATR    = 2.00;             // Skip if the stop is wider than this x ATR
+input double InpPbTP1_R        = 1.00;             // First target in R (then BE lock + structural trail)
+input int    InpPbCooldownBars = 3;                // M5 bars between two entries
+input double InpPbRandomPct    = 0.0;              // PLACEBO: >0 replaces the trigger by a random entry (this % of bars, random side) with the same stop/target rules - the benchmark every real trigger must beat
+input double InpPbRandSL_ATR   = 1.0;              // PLACEBO stop distance, x ATR
+input bool   InpPbNoTrend      = false;            // Drop the trend filters (EMA/ADX/H1) - keeps the pullback trigger only
 
 input group "=== Asset profile (sessions / blackouts / weekend / day roll) ==="
 enum ENUM_PROFILE
@@ -286,6 +309,8 @@ datetime  g_euYrLo     = 0, g_euYrHi = 0;
 datetime  g_euOn       = 0, g_euOff  = 0;
 datetime  g_modBlockBar = 0;     // M5 bar of the last MARKET_CLOSED modify reply (0 = none)
 int       g_atrHandle  = INVALID_HANDLE;
+int       g_hEmaF = INVALID_HANDLE, g_hEmaS = INVALID_HANDLE, g_hAdx = INVALID_HANDLE, g_hEmaH = INVALID_HANDLE;   // pullback engine
+int       g_pbLastBar = -999;
 double    g_atr        = 0;      // ATR(14) on M5, in price units
 int       g_minLotNotes = 0;     // log throttles
 int       g_spikeUntilBar = 0;   // shock guard: new setups blocked while g_barCounter < this
@@ -418,6 +443,15 @@ int OnInit()
    g_atrHandle = iATR(_Symbol, PERIOD_M5, 14);
    if(g_atrHandle == INVALID_HANDLE){ Print("MIDAS v4: ATR handle failed"); return(INIT_FAILED); }
 
+   if(InpEntryEngine == ENGINE_PULLBACK)
+   {
+      g_hEmaF = iMA(_Symbol, PERIOD_M5, InpPbFast, 0, MODE_EMA, PRICE_CLOSE);
+      g_hEmaS = iMA(_Symbol, PERIOD_M5, InpPbSlow, 0, MODE_EMA, PRICE_CLOSE);
+      g_hAdx  = iADX(_Symbol, PERIOD_M5, 14);
+      if(InpPbHTFEma > 0) g_hEmaH = iMA(_Symbol, PERIOD_H1, InpPbHTFEma, 0, MODE_EMA, PRICE_CLOSE);
+      if(g_hEmaF == INVALID_HANDLE || g_hEmaS == INVALID_HANDLE || g_hAdx == INVALID_HANDLE || (InpPbHTFEma > 0 && g_hEmaH == INVALID_HANDLE))
+      { Print("MIDAS v4.2: pullback indicator handles failed"); return(INIT_FAILED); }
+   }
    ResolveServerClock();
    LoadProfile(true);
 
@@ -2719,6 +2753,115 @@ bool WeekendFlatTime()
    return (d.day_of_week == FRIDAY && d.hour >= g_p.flatHour);
 }
 
+
+//==================================================================//
+//  PART 17b - PULLBACK ENGINE (trend scalper)                       //
+//==================================================================//
+// Evaluated once per closed M5 bar. Trend = EMA(fast) vs EMA(slow) with price on the right side, ADX above a floor and
+// the H1 EMA slope agreeing. Trigger = the bar that just closed touched the fast EMA (pullback to value) and closed back
+// in the trend direction with a real body. Market entry, stop beyond the pullback extreme, TP1 in R, then the same
+// BE-lock + structural trail as the sweep engine.
+void TryPullback()
+{
+   if(InpDirection == DIR_BOTH || InpDirection == DIR_LONG_ONLY || InpDirection == DIR_SHORT_ONLY) {}
+   if(CountMyPositions() > 0 || CountMyPendings() > 0) return;
+   if(g_barCounter - g_pbLastBar < InpPbCooldownBars) return;
+   if(ArraySize(g_m5) < 10 || g_atr <= 0) return;
+
+   if(InpPbRandomPct > 0)
+   {
+      if(MathRand() / 32767.0 * 100.0 >= InpPbRandomPct) return;
+      int rd = (MathRand() % 2 == 0) ? +1 : -1;
+      double bidr = SymbolInfoDouble(_Symbol, SYMBOL_BID), askr = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+      double er = (rd > 0) ? askr : bidr, Rr = InpPbRandSL_ATR * g_atr, slr = (rd > 0) ? er - Rr : er + Rr;
+      double lotr = CalcLot(rd > 0, er, slr);
+      if(lotr <= 0 || !RiskMgrOK(RiskToStop(_Symbol, rd > 0, lotr, er, slr))) return;
+      slr = NormalizeDouble(slr, g_digits);
+      bool okr = (rd > 0) ? trade.Buy(lotr, _Symbol, 0.0, slr, 0.0, InpComment + "|RND") : trade.Sell(lotr, _Symbol, 0.0, slr, 0.0, InpComment + "|RND");
+      ulong tkr = okr ? GetPosByType(rd > 0 ? POSITION_TYPE_BUY : POSITION_TYPE_SELL) : 0;
+      if(tkr == 0) return;
+      g_fFill++; g_pbLastBar = g_barCounter; RecordTrade();
+      double tpr = (rd > 0) ? er + InpPbTP1_R*Rr : er - InpPbTP1_R*Rr;
+      RegisterNewPosition(rd > 0, Rr, tpr);
+      if(rd > 0){ g_tp1Long = tpr; g_nRungsL = 0; g_reachedL = 0; } else { g_tp1Short = tpr; g_nRungsS = 0; g_reachedS = 0; }
+      SSetup jr; ClearSetup(jr); jr.tag = InpComment + "|RND"; jr.spread = askr - bidr; JournalOpen(rd > 0, tkr, jr);
+      return;
+   }
+   double ef[], es[], ad[], eh[];
+   if(CopyBuffer(g_hEmaF, 0, 1, 3, ef) < 3 || CopyBuffer(g_hEmaS, 0, 1, 3, es) < 3) return;
+   double f1 = ef[2], s1 = es[2];
+   if(InpPbAdxMin > 0 && !InpPbNoTrend)
+   {
+      if(CopyBuffer(g_hAdx, 0, 1, 1, ad) < 1) return;
+      if(ad[0] < InpPbAdxMin) return;
+   }
+   int dir = 0;
+   if(InpPbNoTrend)
+   {
+      // pullback trigger only: side follows the candle (bullish rejection of the fast EMA = long)
+      dir = (C(g_m5,1) > O(g_m5,1)) ? +1 : -1;
+   }
+   else if(f1 > s1 && C(g_m5,1) > s1) dir = +1;
+   else if(f1 < s1 && C(g_m5,1) < s1) dir = -1;
+   else return;
+   if(dir > 0 && InpDirection == DIR_SHORT_ONLY) return;
+   if(dir < 0 && InpDirection == DIR_LONG_ONLY)  return;
+   if(InpPbHTFEma > 0 && !InpPbNoTrend)
+   {
+      if(CopyBuffer(g_hEmaH, 0, 1, 4, eh) < 4) return;
+      double slope = eh[3] - eh[0];
+      if(dir > 0 && slope <= 0) return;
+      if(dir < 0 && slope >= 0) return;
+   }
+
+   double atr = g_atr, o1 = O(g_m5,1), c1 = C(g_m5,1);
+   if(MathAbs(c1 - o1) < InpPbMinBodyATR*atr) return;
+   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID), ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   double entry, sl;
+   if(dir > 0)
+   {
+      if(!(c1 > o1 && c1 > f1)) return;
+      if(L(g_m5,1) > f1 + InpPbTouchATR*atr) return;                // did not pull back to value
+      double ext = MathMin(L(g_m5,1), MathMin(L(g_m5,2), L(g_m5,3)));
+      entry = ask; sl = ext - InpPbSLBufATR*atr;
+   }
+   else
+   {
+      if(!(c1 < o1 && c1 < f1)) return;
+      if(H(g_m5,1) < f1 - InpPbTouchATR*atr) return;
+      double ext = MathMax(H(g_m5,1), MathMax(H(g_m5,2), H(g_m5,3)));
+      entry = bid; sl = ext + InpPbSLBufATR*atr;
+   }
+   double minD = MinStopDistance();
+   if(dir > 0 && entry - sl < minD) sl = entry - minD;
+   if(dir < 0 && sl - entry < minD) sl = entry + minD;
+   double R = MathAbs(entry - sl);
+   if(R < InpPbMinSL_ATR*atr){ CountDrop("pb:stop_too_tight"); return; }
+   if(R > InpPbMaxSL_ATR*atr){ CountDrop("pb:stop_too_wide"); return; }
+   double spr = ask - bid;
+   if(g_p.maxSpreadRPct > 0 && spr > g_p.maxSpreadRPct/100.0*R){ CountDrop("pb:spread_vs_R"); return; }
+
+   double lot = CalcLot(dir > 0, entry, sl);
+   if(lot <= 0){ CountDrop("pb:lot_zero"); return; }
+   sl = NormalizeDouble(sl, g_digits);
+   double newRisk = RiskToStop(_Symbol, dir > 0, lot, entry, sl);
+   if(!RiskMgrOK(newRisk)){ CountDrop("pb:risk_mgr"); return; }
+
+   string tag = InpComment + "|PB";
+   double tp1 = (dir > 0) ? entry + InpPbTP1_R*R : entry - InpPbTP1_R*R;
+   bool ok = (dir > 0) ? trade.Buy(lot, _Symbol, 0.0, sl, 0.0, tag) : trade.Sell(lot, _Symbol, 0.0, sl, 0.0, tag);
+   if(!ok){ CountDrop("pb:order_failed"); return; }
+   g_fArm++;
+   ulong tk = GetPosByType(dir > 0 ? POSITION_TYPE_BUY : POSITION_TYPE_SELL);
+   if(tk == 0) return;
+   g_fFill++; g_pbLastBar = g_barCounter;
+   RecordTrade();
+   RegisterNewPosition(dir > 0, R, tp1);
+   if(dir > 0){ g_tp1Long = tp1; g_nRungsL = 0; g_reachedL = 0; } else { g_tp1Short = tp1; g_nRungsS = 0; g_reachedS = 0; }
+   SSetup js; ClearSetup(js); js.tag = tag; js.spread = spr;
+   JournalOpen(dir > 0, tk, js);
+}
+
 //==================================================================//
 //  PART 18 - MAIN TICK ORCHESTRATION                                //
 //==================================================================//
@@ -2753,7 +2896,7 @@ void OnTick()
    ReloadProfileIfChanged();
    UpdateM5Structure();
    UpdateHTFBias();
-   BuildPools();
+   if(InpEntryEngine == ENGINE_SWEEP) BuildPools();
    RefreshOpenRisk();
    if(!MQLInfoInteger(MQL_TESTER) && (g_barCounter % 12) == 0) WriteStatus("heartbeat");
 
@@ -2786,6 +2929,11 @@ void OnTick()
       return;
    }
    bool room = (CountMyPositions() + CountMyPendings()) < InpMaxPositions;
+   if(InpEntryEngine == ENGINE_PULLBACK)
+   {
+      if(armOK && room) TryPullback();
+      return;
+   }
    ProcessSide(g_setL, +1, armOK && room);
    ProcessSide(g_setS, -1, armOK && room);
 }
