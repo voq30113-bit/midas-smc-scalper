@@ -13,7 +13,8 @@ Read-only with respect to trading: it never writes a profile and never touches M
 import csv, glob, json, os, subprocess, sys, time
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-OUT = os.path.join(ROOT, "docs", "data", "performance.json")
+DATA_REPO = os.environ.get("MIDAS_DATA_REPO", os.path.join(os.path.dirname(ROOT), "midas-data"))   # PRIVATE repo, read by the page after login
+OUT = os.path.join(DATA_REPO, "performance.json")
 COMMON = os.path.join(os.environ.get("APPDATA", ""), "MetaQuotes", "Terminal", "Common", "Files", "MIDAS")
 NUM = ("lot", "entry", "sl", "r_price", "r_atr", "atr", "spread", "spread_r_pct", "pnl_money", "pnl_r", "mfe_r",
        "mae_r", "hold_min", "balance_after")
@@ -55,7 +56,14 @@ def collect():
     if os.path.exists(ref):
         runs += json.load(open(ref, encoding="utf-8"))
     trades.sort(key=lambda r: r["close_utc"])
-    return {"generated_utc": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()), "trades": trades, "runs": runs}
+    status = []
+    for p in sorted(glob.glob(os.path.join(COMMON, "status_*.ini"))):      # EA heartbeat / acknowledgement files
+        d = {}
+        for ln in open(p, encoding="utf-8", errors="replace"):
+            if "=" in ln:
+                k, v = ln.strip().split("=", 1); d[k] = v
+        status.append(d)
+    return {"generated_utc": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()), "trades": trades, "runs": runs, "status": status}
 
 
 def build():
@@ -69,8 +77,8 @@ def build():
 
 def push():
     def git(*a):
-        return subprocess.run(["git", "-C", ROOT, *a], capture_output=True, text=True)
-    git("add", "docs/data/performance.json", "backtests")
+        return subprocess.run(["git", "-C", DATA_REPO, *a], capture_output=True, text=True)
+    git("add", "performance.json")
     if git("diff", "--cached", "--quiet").returncode == 0:
         print("nothing new to publish"); return
     msg = "Agent: update performance data " + time.strftime("%Y-%m-%d %H:%M", time.gmtime()) + " UTC"

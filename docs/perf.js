@@ -163,8 +163,10 @@
   }
   window.perfLoadFiles = async function (files) {
     for (const f of files) DATA.trades = DATA.trades.concat(parseCsv(await f.text(), "upload:" + f.name));
-    render();
+    document.dispatchEvent(new Event("midas-data")); render();
   };
-  fetch("data/performance.json?t=" + Date.now()).then(r => r.json()).then(d => { DATA = d; render(); }).catch(() => render());
+  window.perfData = () => DATA;
+  window.perfSet = d => { DATA = Object.assign({ trades: [], runs: [], status: [], generated_utc: "" }, d); document.dispatchEvent(new Event("midas-data")); render(); };
   window.perfRender = render;
+  render();
 })();

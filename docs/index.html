@@ -2,45 +2,96 @@
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MIDAS Control</title>
 <style>
-:root{--bg:#f4f5f8;--fg:#1c2330;--card:#fff;--bd:#d9dde5;--ac:#2f6df6;--g:#1a8f5a;--r:#c8403f;--y:#b7791f;--m:#6b7587}
-@media(prefers-color-scheme:dark){:root{--bg:#12161d;--fg:#e4e8ef;--card:#1b212b;--bd:#2d3542;--ac:#6b9bff;--g:#4cc58a;--r:#ef7b7a;--y:#e3b34f;--m:#8d97a8}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,sans-serif}
-header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--bd)}
-header b{font-size:16px}
-nav{display:flex;gap:4px;padding:8px 12px;flex-wrap:wrap}
-nav button,.btn{background:var(--card);border:1px solid var(--bd);color:var(--fg);padding:6px 12px;border-radius:6px;cursor:pointer;font:inherit}
-nav button.on,.btn.p{background:var(--ac);color:#fff;border-color:var(--ac)}
-.btn.d{border-color:var(--r);color:var(--r)}
-main{padding:8px 16px 40px;max-width:1150px}
+:root{--bg:#0b0f17;--side:#0e131d;--card:#111826;--bd:#1d2636;--fg:#e6eaf2;--m:#7d8aa3;--ac:#3b82f6;--g:#22c55e;--r:#ef4444;--y:#f59e0b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,"Segoe UI",system-ui,sans-serif}
+.mono,td.n,.kpi>div:nth-child(2),.bartxt{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.app{display:flex;min-height:100vh}
+.side{width:220px;flex:none;background:var(--side);border-right:1px solid var(--bd);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{padding:18px 20px;font-size:17px;font-weight:700}
+.grp{padding:14px 20px 4px;font:11px ui-monospace,Consolas,monospace;letter-spacing:.08em;color:var(--m);text-transform:uppercase}
+.side a{display:flex;align-items:center;gap:8px;margin:1px 10px;padding:6px 10px;border-radius:6px;color:#aab4c8;cursor:pointer;text-decoration:none}
+.side a:before{content:"";width:6px;height:6px;border-radius:50%;background:#3a4560}
+.side a.on{background:#16233f;color:var(--ac)}.side a.on:before{background:var(--ac)}
+.side .foot{margin-top:auto;padding:12px 20px;border-top:1px solid var(--bd);color:var(--m);font-size:13px}
+.side .foot a{margin:0;padding:4px 0;color:var(--m)}.side .foot a:before{display:none}
+.wrapm{flex:1;min-width:0}
+.demo{display:flex;gap:10px;align-items:center;padding:4px 14px;background:#2a2108;border-bottom:1px solid #6b4e0a;font-size:12px;color:#d9c48a}
+.demo b{background:var(--y);color:#1a1200;border-radius:3px;padding:0 6px;font-size:11px}
+.demo.live{background:#0b2418;border-color:#14532d;color:#86efac}.demo.live b{background:var(--g);color:#052e16}
+.ticker{display:flex;gap:22px;flex-wrap:wrap;padding:7px 14px;border-bottom:1px solid var(--bd);font:12px ui-monospace,Consolas,monospace;color:var(--m)}
+.ticker b{color:var(--fg)}
+main{padding:14px 22px 60px;max-width:1250px}
+.ttl{display:flex;justify-content:space-between;align-items:center;margin:6px 0 14px}.ttl h1{font-size:22px;margin:0;font-weight:600}
+.chip{font:12px ui-monospace,Consolas,monospace;color:var(--m)}.chip b{color:var(--g)}
 section{display:none}section.on{display:block}
-h2{font-size:16px;margin:14px 0 6px}h3{font-size:14px;margin:12px 0 4px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;margin:8px 0}
+h2{font:12px ui-monospace,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ac);margin:20px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--bd)}
+h3{font:12px ui-monospace,Consolas,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--m);margin:16px 0 6px}
+.card,.panel{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin:10px 0}
+.pt{font:11px ui-monospace,Consolas,monospace;letter-spacing:.08em;color:var(--m);text-transform:uppercase;margin-bottom:10px}
 table{border-collapse:collapse;width:100%;background:var(--card)}
-th,td{border:1px solid var(--bd);padding:4px 8px;text-align:left;vertical-align:top}
+th{font:11px ui-monospace,Consolas,monospace;letter-spacing:.05em;color:var(--m);text-transform:uppercase;font-weight:500;border-bottom:1px solid var(--bd);padding:7px 8px;text-align:left}
+td{border-bottom:1px solid var(--bd);padding:5px 8px;text-align:left;vertical-align:top}
 td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 .wrap{overflow-x:auto}
-label{display:block;margin:6px 0 2px;color:var(--m);font-size:12px}
-input,select,textarea{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:5px 8px;font:inherit;max-width:100%}
-textarea{width:100%;min-height:110px;font-family:ui-monospace,monospace;font-size:12px}
+label{display:block;margin:6px 0 2px;color:var(--m);font:11px ui-monospace,Consolas,monospace;text-transform:uppercase;letter-spacing:.04em}
+input,select,textarea{background:#0b1220;color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:5px 8px;font:inherit;max-width:100%}
+textarea{width:100%;min-height:110px;font:12px ui-monospace,Consolas,monospace}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}.row>div{flex:1;min-width:130px}
 .m{color:var(--m)}.pos{color:var(--g)}.neg{color:var(--r)}.warn{color:var(--y)}
-.tag{display:inline-block;padding:0 7px;border-radius:10px;font-size:12px;border:1px solid var(--bd)}
-.tag.s{border-color:var(--g);color:var(--g)}.tag.n{border-color:var(--y);color:var(--y)}.tag.c{border-color:var(--r);color:var(--r)}
-.layers{display:grid;gap:6px}.layer{border:1px solid var(--bd);border-radius:8px;padding:8px 12px;background:var(--card)}
-.layer.agent{border-left:4px solid var(--ac)}.layer.orch{border-left:4px solid var(--y)}.layer.bot{border-left:4px solid var(--g)}.layer.exec{border-left:4px solid var(--m)}
-.mods{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}.mod{border:1px solid var(--bd);border-radius:6px;padding:2px 8px;font-size:13px}
+.btn,nav button{background:#0b1220;border:1px solid var(--bd);color:var(--fg);padding:5px 12px;border-radius:6px;cursor:pointer;font:inherit}
+.btn.p{background:var(--ac);border-color:var(--ac);color:#fff}.btn.on{border-color:var(--ac);color:var(--ac);background:#10203c}.btn.d{border-color:#7f1d1d;color:var(--r)}
+.tag{display:inline-block;padding:0 7px;border-radius:4px;font:11px ui-monospace,Consolas,monospace;border:1px solid var(--bd)}
+.tag.s{border-color:#14532d;color:var(--g);background:#0b2418}.tag.n{border-color:#6b4e0a;color:var(--y);background:#2a2108}.tag.c{border-color:#7f1d1d;color:var(--r);background:#2a0d0d}
+.side-l{color:var(--g)}.side-s{color:var(--r)}
+.layers{display:grid;gap:8px}.layer{border:1px solid var(--bd);border-radius:8px;padding:10px 14px;background:var(--card)}
+.layer.agent{border-left:3px solid var(--ac)}.layer.orch{border-left:3px solid var(--y)}.layer.bot{border-left:3px solid var(--g)}.layer.exec{border-left:3px solid var(--m)}
+.mods{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.mod{border:1px solid var(--bd);border-radius:6px;padding:2px 8px;font-size:13px;background:#0b1220}
 .kill{background:var(--r);color:#fff;border:0;padding:8px 16px;border-radius:6px;font-weight:700;cursor:pointer}
-.drop{border:2px dashed var(--bd);padding:18px;text-align:center;border-radius:8px}
+.danger{background:#1c0b0e;border-color:#7f1d1d}
+.drop{border:2px dashed var(--bd);padding:16px;text-align:center;border-radius:8px;color:var(--m)}
 li{margin:3px 0}ul.c{list-style:none;padding:0}
-code{background:var(--bg);padding:1px 4px;border-radius:4px}
-.hash{font-family:ui-monospace,monospace;font-size:11px;color:var(--m);word-break:break-all}
-.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:8px 0}.kpi{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:8px 10px}.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:10px;margin:8px 0}</style></head><body>
-<header><b>MIDAS Control <span class="m" style="font-weight:400">— khung Agent (chưa có Agent thật)</span></b>
-<span><button class="btn" id="exp">Xuất trạng thái</button> <label class="btn" style="display:inline-block;margin:0">Nhập<input type="file" id="imp" accept=".json" hidden></label></span></header>
-<nav id="nav"></nav>
+code{background:#0b1220;padding:1px 5px;border-radius:4px;font-size:12px}
+.hash{font:11px ui-monospace,Consolas,monospace;color:var(--m);word-break:break-all}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:8px 0}
+.kpi{background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:10px 12px}
+.kpi>div:first-child{font:11px ui-monospace,Consolas,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--m)!important}
+.kpi>div:nth-child(2){font-size:22px!important;margin-top:2px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:10px;margin:8px 0}
+.bar{display:flex;align-items:center;gap:12px;margin:10px 0}.bar .bl{width:150px;font:13px ui-monospace,Consolas,monospace}
+.bar .bt{flex:1;height:6px;background:#1a2233;border-radius:3px;overflow:hidden}.bar .bt i{display:block;height:100%;border-radius:3px}
+.bar .bartxt{width:130px;text-align:right;color:var(--m);font-size:12px}
+.pager{display:flex;gap:10px;justify-content:center;align-items:center;margin:10px 0;color:var(--m)}
+#gate{position:fixed;inset:0;background:rgba(5,8,14,.92);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+#gate.on{display:flex}#gate .box{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:22px;max-width:460px;width:100%}
+@media(max-width:800px){.app{flex-direction:column}.side{width:100%;height:auto;position:static;flex-direction:row;flex-wrap:wrap}.grp{display:none}.side .foot{display:none}.brand{width:100%}}
+.kpis .kpi{min-width:0}
+</style></head><body>
+<div id="gate"><div class="box">
+<div class="brand" style="padding:0 0 8px">MIDAS Control</div>
+<p class="m" style="margin:0 0 10px">Đăng nhập bằng GitHub. Dữ liệu hiệu suất nằm trong repo <b>private</b>; trang chỉ đọc được khi token của bạn có quyền vào repo đó. Token chỉ lưu trong trình duyệt này và chỉ được gửi tới <code>api.github.com</code>.</p>
+<label>Repo dữ liệu</label><input id="g_repo" value="voq30113-bit/midas-data" style="width:100%">
+<label>GitHub token (fine-grained, chỉ quyền Contents: Read-only trên repo đó)</label><input id="g_tok" type="password" placeholder="github_pat_..." style="width:100%">
+<label style="display:flex;gap:6px;align-items:center;text-transform:none;font:13px system-ui"><input type="checkbox" id="g_rem"> Ghi nhớ trên máy này (localStorage)</label>
+<p id="g_err" class="neg" style="min-height:20px;margin:6px 0"></p>
+<button class="btn p" id="g_go">Đăng nhập</button> <button class="btn" id="g_skip">Xem không dữ liệu</button>
+<details style="margin-top:12px" class="m"><summary>Cách tạo token</summary><ol style="padding-left:18px">
+<li>GitHub → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token.</li>
+<li>Repository access: <b>Only select repositories</b> → <code>midas-data</code>.</li>
+<li>Permissions → Repository → <b>Contents: Read-only</b>. Đặt hạn dùng ngắn (30–90 ngày).</li>
+<li>Dán token vào ô trên. Không bao giờ gửi token cho ai khác, kể cả Claude.</li></ol></details>
+</div></div>
+<div class="app">
+<aside class="side"><div class="brand">MIDAS Control</div><div id="nav"></div>
+<div class="foot"><div id="who" class="m" style="margin-bottom:6px">Chưa đăng nhập</div><a id="signout">⏻ Đăng xuất</a></div></aside>
+<div class="wrapm">
+<div class="demo" id="demo"><b>DEMO</b><span id="demotxt">Dữ liệu từ backtest/nhật ký — chưa kết nối EA live</span></div>
+<div class="ticker" id="tick"></div>
 <main>
+<div class="ttl"><h1 id="ptitle">Tổng quan</h1><div class="chip" id="pchip"></div></div>
+
 
 <section id="ov">
+<div class="kpis" id="ovk"></div>
 <p class="m">Trang chạy hoàn toàn trong trình duyệt, lưu trạng thái ở máy bạn (nút Xuất/Nhập để sao lưu). Nó <b>chưa điều khiển EA</b>: mọi hành động chỉ tạo ra file hoặc bản ghi để Agent thật sau này đọc. Mỗi khối cho biết đã có gì và còn thiếu gì.</p>
 <h2>Kiến trúc 4 tầng</h2>
 <div class="layers">
@@ -53,10 +104,10 @@ code{background:var(--bg);padding:1px 4px;border-radius:4px}
 <h2>Mức tự chủ</h2>
 <div class="card"><div class="row"><div><label>Mức hiện tại cho phép</label><select id="lvl"></select></div><div id="lvlinfo" class="m"></div></div></div>
 <h2>Lộ trình</h2><div class="card"><ul class="c" id="road"></ul></div>
-<h2>Công tắc dừng khẩn cấp</h2>
-<div class="card"><p class="m">Tạo file <code>MIDAS\KILL.txt</code> trong Common\Files. <b>EA v4 hiện chưa đọc file này</b>, nên đây mới là thiết kế; muốn dừng thật hãy tắt Algo Trading trong MT5.</p>
-<button class="kill" id="kill">Tạo nội dung KILL</button> <textarea id="killout" readonly style="min-height:60px"></textarea></div>
-</section>
+<div class="panel danger"><div class="pt" style="color:var(--r)">Emergency stop</div>
+<p class="m" style="margin:0 0 8px">Tạo file <code>MIDAS\KILL.txt</code> trong Common\Files. <b>EA v4 hiện chưa đọc file này</b>; muốn dừng thật hãy tắt Algo Trading trong MT5.</p>
+<button class="kill" id="kill">Tạo nội dung KILL</button> <textarea id="killout" readonly style="min-height:60px;margin-top:8px"></textarea></div>
+</section></section>
 
 <section id="bots">
 <p class="m">Hướng C của tài liệu: mỗi cặp (symbol + profile) là một bot. Magic phải nằm trong 580000–589999 để Risk Manager tính rủi ro.</p>
@@ -83,6 +134,12 @@ code{background:var(--bg);padding:1px 4px;border-radius:4px}
 13,2.7,0</textarea><button class="btn p" id="rrun">Chạy</button><div class="wrap" id="rout"></div>
 </section>
 
+<section id="tr">
+<div class="panel"><div class="pt">Trade history</div>
+<div class="row"><div><label>Hướng</label><span id="trside"></span></div><div><label>Symbol</label><span id="trsym"></span></div><div><label>Từ</label><input id="trf" type="date"></div><div><label>Đến</label><input id="trt" type="date"></div><div style="flex:none"><button class="btn p" id="trcsv">Export CSV</button></div></div></div>
+<div class="wrap"><table id="trtab"></table></div><div class="pager" id="trpg"></div>
+</section>
+
 <section id="pf">
 <p class="m">Báo cáo hiệu suất. Dữ liệu tự nạp từ <code>data/performance.json</code> (Agent cập nhật bằng <code>Agent/publish_performance.py --push</code>). Bạn cũng có thể kéo thả thêm <code>journal_*.csv</code> để xem tạm; file kéo thả không được lưu.</p>
 <div class="drop" id="drop">Kéo thả CSV vào đây hoặc <input type="file" id="f" multiple accept=".csv"></div>
@@ -106,6 +163,7 @@ code{background:var(--bg);padding:1px 4px;border-radius:4px}
 </section>
 
 <section id="pm">
+<div class="panel"><div class="pt">Trạng thái trang</div><button class="btn" id="exp">Xuất trạng thái</button> <label class="btn" style="display:inline-block;margin:0">Nhập<input type="file" id="imp" accept=".json" hidden></label> <span class="m">sao lưu bot, kinh nghiệm, nhật ký quyết định (lưu ở trình duyệt)</span></div>
 <p class="m">Parameter Manager: lớp kiểm soát cuối. <b>Kênh</b> cho biết tham số đổi được bằng cách nào ngay hôm nay. "Chưa có" nghĩa là EA v4 chưa có cổng đọc tham số đó, cần xây thêm trước khi Agent được đổi.</p>
 <div class="wrap"><table id="ptab"></table></div>
 <h3>Tạo file profile (kênh đang chạy)</h3>
@@ -114,30 +172,34 @@ code{background:var(--bg);padding:1px 4px;border-radius:4px}
 </section>
 
 <section id="rk">
-<h2>Giới hạn cứng</h2>
-<div class="row card"><div><label>Tổng rủi ro mở tối đa (% số dư)</label><input id="k1" type="number" value="4" step="0.5"></div><div><label>Số vị thế/lệnh chờ tối đa</label><input id="k2" type="number" value="4"></div><div><label>Drawdown tối đa toàn hệ thống (%)</label><input id="k3" type="number" value="20"></div><div><label>Số lần đổi config tối đa / ngày</label><input id="k4" type="number" value="2"></div><div><label>Lỗ ngày (%)</label><input id="k5" type="number" value="6" step="0.5"></div></div>
-<p class="m">Hai ô đầu trùng với <code>InpMaxOpenRiskPct</code> và <code>InpMaxOpenPositions</code> của EA; lỗ ngày trùng <code>InpDailyLossPct</code>. Hai ô còn lại (DD hệ thống, số lần đổi config) chưa có nơi thực thi.</p>
-<h2>Lớp bảo vệ bắt buộc</h2><div class="card"><ul class="c" id="guard"></ul></div>
-<h2>Circuit breaker (thiết kế)</h2><div class="card"><ul>
-<li>Lỗ đột biến vượt ngưỡng lỗ ngày → EA đã tự đóng và chặn trong ngày.</li>
-<li>Mất kết nối broker / dữ liệu lỗi → chưa có; Agent phải phát hiện qua file <code>status_*.ini</code> không cập nhật quá 30 phút.</li>
-<li>Rollback tự động: nếu hiệu suất sau đổi config giảm quá ngưỡng trong N lệnh → quay lại profile trước (lưu trong nhật ký quyết định).</li></ul></div>
+<div class="panel"><div class="pt">Risk limits <span id="rkwho" class="m"></span></div><div id="rbars"></div></div>
+<div class="panel"><div class="pt">Giới hạn cứng (cấu hình)</div>
+<div class="row"><div><label>Tổng rủi ro mở tối đa (% số dư)</label><input id="k1" type="number" value="4" step="0.5"></div><div><label>Vị thế/lệnh chờ tối đa</label><input id="k2" type="number" value="4"></div><div><label>Drawdown tối đa hệ thống (%)</label><input id="k3" type="number" value="20"></div><div><label>Đổi config tối đa / ngày</label><input id="k4" type="number" value="2"></div><div><label>Lỗ ngày (%)</label><input id="k5" type="number" value="6" step="0.5"></div></div>
+<p class="m" style="margin:8px 0 0">Ô 1, 2, 5 trùng <code>InpMaxOpenRiskPct</code>, <code>InpMaxOpenPositions</code>, <code>InpDailyLossPct</code> của EA. Ô 3, 4 chưa có nơi thực thi.</p></div>
+<h2>Lớp bảo vệ bắt buộc</h2><div class="panel"><ul class="c" id="guard"></ul></div>
+<h2>Circuit breaker (thiết kế)</h2><div class="panel"><ul>
+<li>Lỗ đột biến vượt ngưỡng lỗ ngày → EA tự đóng và chặn trong ngày.</li>
+<li>Mất kết nối / dữ liệu lỗi → chưa có; Agent phải phát hiện qua <code>status_*.ini</code> không cập nhật quá 30 phút.</li>
+<li>Rollback: hiệu suất giảm quá ngưỡng trong N lệnh sau khi đổi config → quay lại profile trước.</li></ul></div>
+<div class="panel danger"><div class="pt" style="color:var(--r)">Emergency stop</div><p class="m" style="margin:0">Nút nằm ở tab Tổng quan.</p></div>
 </section>
 
 <section id="as">
 <h2>Tài sản đã quét</h2><div class="wrap"><table id="at"></table></div>
 <h2>Backtest cần chạy</h2><ul class="c" id="bl"></ul>
 </section>
-</main>
+</main></div></div>
+<script src="perf.js"></script>
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 let S={bots:[{symbol:"XAUUSD",profile:"GOLD",magic:580001,cap:30,state:"shadow"},{symbol:"USTEC",profile:"INDEX_US",magic:580003,cap:30,state:"shadow"},{symbol:"BTCUSD",profile:"CRYPTO",magic:580008,cap:20,state:"shadow"}],
  lvl:1,road:{},exp:[],log:[],bt:{},guard:{},rth:null,k:{}};
 try{Object.assign(S,JSON.parse(localStorage.getItem("midas")||"{}"))}catch(e){}
+S.k=S.k||{};if(S.k.k1==null)Object.assign(S.k,{k1:4,k2:4,k3:20,k4:2,k5:6});
 const save=()=>{try{localStorage.setItem("midas",JSON.stringify(S))}catch(e){}};
-const tabs=[["ov","Tổng quan"],["bots","Bot"],["rg","Regime"],["pf","Hiệu suất"],["ex","Kinh nghiệm"],["dc","Quyết định"],["pm","Tham số"],["rk","Rủi ro"],["as","Tài sản & Backtest"]];
-tabs.forEach(([id,n])=>{const b=document.createElement("button");b.textContent=n;b.dataset.id=id;b.onclick=()=>show(id);$("#nav").append(b)});
-function show(id){$$("section").forEach(s=>s.classList.toggle("on",s.id==id));$$("nav button").forEach(b=>b.classList.toggle("on",b.dataset.id==id));location.hash=id}
+const NAV=[["LIVE MONITOR",[["ov","Tổng quan"],["bots","Bot"],["tr","Giao dịch"],["pf","Hiệu suất"],["rk","Rủi ro"]]],["RESEARCH",[["as","Backtest & Tài sản"],["rg","Regime"],["ex","Kinh nghiệm"]]],["SYSTEM",[["dc","Quyết định (audit)"],["pm","Cấu hình / Tham số"]]]];
+const TITLES={};NAV.forEach(([g,it])=>{$("#nav").insertAdjacentHTML("beforeend",`<div class="grp">${g}</div>`);it.forEach(([id,n])=>{TITLES[id]=n;const a=document.createElement("a");a.textContent=n;a.dataset.id=id;a.onclick=()=>show(id);$("#nav").append(a)})});
+function show(id){if(!TITLES[id])id="ov";$$("section").forEach(s=>s.classList.toggle("on",s.id==id));$$("#nav a").forEach(b=>b.classList.toggle("on",b.dataset.id==id));$("#ptitle").textContent=TITLES[id];location.hash=id;window.scrollTo(0,0)}
 show((location.hash||"#ov").slice(1)||"ov");
 $("#exp").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)]));a.download="midas_control_state.json";a.click()};
 $("#imp").onchange=async e=>{try{S=Object.assign(S,JSON.parse(await e.target.files[0].text()));save();location.reload()}catch(x){alert("File không hợp lệ")}};
@@ -238,4 +300,61 @@ fetch("assets.json").then(r=>r.json()).then(d=>{$("#at").innerHTML="<tr><th>Symb
 const T=["V4 vàng 03–11/2026 (cơ sở)","v3.4 LEGACY vàng cùng kỳ","v3.4 V3 vàng cùng kỳ","V4 USTEC, BTCUSD, DE30, USOIL, XAGUSD cùng kỳ","V4 EURUSD / USDJPY (xem tỉ lệ lệnh bị từ chối vì spread/R)","Blackout bật/tắt cho vàng và chỉ số","Walk-forward: tách đôi kỳ, so kỳ vọng R"];
 $("#bl").innerHTML=T.map((t,i)=>`<li><label style="color:inherit;font-size:14px"><input type=checkbox data-i=${i} ${S.bt[i]?"checked":""}> ${t}</label></li>`).join("");
 $("#bl").onchange=e=>{S.bt[e.target.dataset.i]=e.target.checked;save()};
-</script><script src="perf.js"></script></body></html>
+
+/* ================= auth + data (private repo) ================= */
+const AK="midas_auth";
+const getAuth=()=>{try{return JSON.parse(sessionStorage.getItem(AK)||localStorage.getItem(AK)||"null")}catch(e){return null}};
+const gh=(path,tok,raw)=>fetch("https://api.github.com"+path,{headers:{Authorization:"Bearer "+tok,Accept:raw?"application/vnd.github.raw+json":"application/vnd.github+json"}});
+let AUTH=null,TIMER=null;
+async function loadData(){if(!AUTH)return;
+ const r=await gh(`/repos/${AUTH.repo}/contents/performance.json`,AUTH.tok,true);
+ if(!r.ok)throw new Error(r.status==404?"Không thấy performance.json trong repo (Agent chưa đẩy dữ liệu?)":"HTTP "+r.status);
+ perfSet(await r.json())}
+async function doLogin(tok,repo,remember,silent){
+ const e=$("#g_err");e.textContent="";
+ try{const u=await gh("/user",tok);if(!u.ok)throw new Error(u.status==401?"Token sai hoặc hết hạn":"HTTP "+u.status);const user=(await u.json()).login;
+  const rp=await gh("/repos/"+repo,tok);if(!rp.ok)throw new Error("Token không có quyền đọc repo "+repo);
+  AUTH={tok,repo,user};const st=JSON.stringify(AUTH);try{sessionStorage.removeItem(AK);localStorage.removeItem(AK);(remember?localStorage:sessionStorage).setItem(AK,st)}catch(x){}
+  $("#who").textContent="● "+user;$("#gate").classList.remove("on");
+  await loadData();clearInterval(TIMER);TIMER=setInterval(()=>loadData().catch(()=>{}),300000)}
+ catch(x){if(silent){$("#gate").classList.add("on")}e.textContent=x.message}}
+$("#g_go").onclick=()=>doLogin($("#g_tok").value.trim(),$("#g_repo").value.trim(),$("#g_rem").checked);
+$("#g_tok").onkeydown=e=>{if(e.key=="Enter")$("#g_go").click()};
+$("#g_skip").onclick=()=>$("#gate").classList.remove("on");
+$("#signout").onclick=()=>{try{sessionStorage.removeItem(AK);localStorage.removeItem(AK)}catch(x){}AUTH=null;clearInterval(TIMER);perfSet({trades:[],runs:[],status:[],generated_utc:""});$("#who").textContent="Chưa đăng nhập";$("#g_tok").value="";$("#gate").classList.add("on")};
+{const a=getAuth();if(a){$("#g_repo").value=a.repo;doLogin(a.tok,a.repo,!!localStorage.getItem(AK),true)}else $("#gate").classList.add("on")}
+
+/* ================= dashboard glue ================= */
+const nf=(x,d=2)=>isFinite(x)?Number(x).toFixed(d):"—";
+function dstats(tr){let R=0,m=0,w=0;tr.forEach(t=>{R+=t.pnl_r;m+=t.pnl_money;if(t.pnl_r>0)w++});return{n:tr.length,R,m,wr:tr.length?w/tr.length*100:0}}
+function refreshAll(){
+ const D=perfData(),st=(D.status||[]),tr=D.trades||[],live=st.length>0,x=dstats(tr);
+ $("#demo").className="demo"+(live?" live":"");$("#demo").innerHTML=live?`<b>LIVE</b><span>EA báo cáo lần cuối ${st.map(s=>s.updated_utc).sort().pop()} UTC</span>`:`<b>DEMO</b><span>Dữ liệu từ backtest/nhật ký — chưa có tín hiệu từ EA live</span>`;
+ $("#tick").innerHTML=`<span>Lệnh <b>${x.n}</b></span><span>Tổng R <b class="${x.R>=0?"pos":"neg"}">${nf(x.R,1)}</b></span><span>Lãi/lỗ <b class="${x.m>=0?"pos":"neg"}">${nf(x.m,0)}</b></span><span>Thắng <b>${nf(x.wr,1)}%</b></span><span>Bot đang báo cáo <b>${st.length}</b></span><span>Cập nhật dữ liệu <b>${D.generated_utc||"—"}</b></span>`;
+ $("#pchip").innerHTML=`Agent: <b>chỉ quan sát</b> · mức ${S.lvl}`;
+ const bal=st.reduce((a,s)=>a+ +s.balance,0)/(st.length||1),eq=st.reduce((a,s)=>a+ +s.equity,0)/(st.length||1),orisk=st.reduce((a,s)=>a+ +s.open_risk_pct,0)/(st.length||1);
+ const today=new Date().toISOString().slice(0,10),td=tr.filter(t=>t.close_utc.startsWith(today)),tds=dstats(td);
+ const k=(l,v,c,h)=>`<div class="kpi"><div>${l}</div><div class="${c||""}">${v}</div>${h?`<div class="m" style="font-size:11px">${h}</div>`:""}</div>`;
+ $("#ovk").innerHTML=k("Số dư",live?nf(bal,2):"—","","từ status EA")+k("Equity",live?nf(eq,2):"—")+k("Rủi ro mở",live?nf(orisk,2)+"%":"—",orisk>=S.k.k1*0.9?"warn":"",`giới hạn ${S.k.k1||4}%`)+k("Lệnh hôm nay",tds.n)+k("R hôm nay",nf(tds.R,1),tds.R>=0?"pos":"neg")+k("Tổng R (tất cả)",nf(x.R,1),x.R>=0?"pos":"neg",x.n+" lệnh");
+ rbars();trender()}
+document.addEventListener("midas-data",refreshAll);
+function bar(l,v,lim,txt,inv){const p=lim?Math.min(100,v/lim*100):0,c=p>=90?"var(--r)":p>=60?"var(--y)":"var(--ac)";return `<div class="bar"><span class="bl">${l}</span><span class="bt"><i style="width:${p}%;background:${c}"></i></span><span class="bartxt">${txt}</span></div>`}
+function rbars(){const st=(perfData().status||[]);const K=S.k;
+ if(!st.length){$("#rbars").innerHTML=`<p class="m">Chưa có dữ liệu live. Khi EA v4 chạy trên MT5, nó ghi <code>status_*.ini</code> và Agent đẩy lên đây. Giới hạn đang cấu hình: rủi ro mở ${K.k1||4}%, ${K.k2||4} vị thế, lỗ ngày ${K.k5||6}%.</p>`;return}
+ const orisk=st.reduce((a,s)=>a+ +s.open_risk_pct,0),items=st.reduce((a,s)=>a+ +s.open_items,0);
+ $("#rbars").innerHTML=bar("Open risk",orisk,K.k1||4,nf(orisk,2)+"% / "+(K.k1||4)+"%")+bar("Positions",items,K.k2||4,items+" / "+(K.k2||4))+st.map(s=>bar(s.symbol,+s.open_risk_pct,K.k1||4,(s.halted=="1"?"HALT · ":s.blocked_today=="1"?"BLOCKED · ":"")+nf(+s.open_risk_pct,2)+"%")).join("")}
+
+/* ---- trades ---- */
+const TS={side:"ALL",sym:"ALL",page:0,PP:15};
+function tfilter(){const D=perfData().trades||[],f=$("#trf").value,t=$("#trt").value;return D.filter(r=>(TS.side=="ALL"||r.dir==TS.side)&&(TS.sym=="ALL"||r.symbol==TS.sym)&&(!f||r.close_utc.slice(0,10)>=f)&&(!t||r.close_utc.slice(0,10)<=t)).sort((a,b)=>a.close_utc<b.close_utc?1:-1)}
+function btns(el,opts,cur,fn){$(el).innerHTML=opts.map(o=>`<button class="btn ${o[0]==cur?"on":""}" data-v="${o[0]}">${o[1]}</button>`).join(" ");$(el).onclick=e=>{if(e.target.dataset.v){fn(e.target.dataset.v);trender()}}}
+function trender(){const D=perfData().trades||[],syms=[...new Set(D.map(r=>r.symbol))].sort();
+ btns("#trside",[["ALL","ALL"],["L","LONG"],["S","SHORT"]],TS.side,v=>{TS.side=v;TS.page=0});btns("#trsym",[["ALL","ALL"],...syms.map(x=>[x,x])],TS.sym,v=>{TS.sym=v;TS.page=0});
+ const rows=tfilter(),pages=Math.max(1,Math.ceil(rows.length/TS.PP));TS.page=Math.min(TS.page,pages-1);
+ $("#trtab").innerHTML="<tr><th>Close (UTC)<th>Symbol<th>Side<th>Setup<th class=n>Lot<th class=n>R<th class=n>P&L<th class=n>MFE<th class=n>MAE<th>Exit<th>Regime</tr>"+(rows.slice(TS.page*TS.PP,(TS.page+1)*TS.PP).map(r=>`<tr><td class=mono>${r.close_utc}<td>${r.symbol}<td class="${r.dir=="L"?"side-l":"side-s"}">${r.dir=="L"?"LONG":"SHORT"}<td>${(r.tag||"").split("|").pop()}<td class=n>${r.lot}<td class="n ${r.pnl_r>=0?"pos":"neg"}">${nf(r.pnl_r)}<td class="n ${r.pnl_money>=0?"pos":"neg"}">${r.pnl_money>=0?"+":""}${nf(r.pnl_money)}<td class=n>${nf(r.mfe_r)}<td class=n>${nf(r.mae_r)}<td>${r.exit}${r.tp1==1?" +TP1":""}<td class=m>${r.vol_regime}/${r.trend_regime}</tr>`).join("")||"<tr><td colspan=11 class=m>Chưa có lệnh (đăng nhập hoặc kéo CSV ở tab Hiệu suất).</tr>");
+ $("#trpg").innerHTML=`<button class="btn" id="tpp">← Prev</button><span>${TS.page+1} / ${pages} (${rows.length} lệnh)</span><button class="btn" id="tpn">Next →</button>`;
+ $("#tpp").onclick=()=>{TS.page=Math.max(0,TS.page-1);trender()};$("#tpn").onclick=()=>{TS.page=Math.min(pages-1,TS.page+1);trender()}}
+$("#trf").onchange=()=>{TS.page=0;trender()};$("#trt").onchange=()=>{TS.page=0;trender()};
+$("#trcsv").onclick=()=>{const rows=tfilter();if(!rows.length)return;const h=Object.keys(rows[0]);const csv=[h.join(","),...rows.map(r=>h.map(k=>r[k]).join(","))].join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv]));a.download="midas_trades.csv";a.click()};
+refreshAll();
+</script></body></html>
