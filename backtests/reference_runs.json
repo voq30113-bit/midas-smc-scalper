@@ -1,0 +1,8 @@
+[
+ {"name": "REF v3.2 LEGACY - MetaQuotes-Demo 2021.01-2026.10 ($5k, 2%)", "symbol": "XAUUSD",
+  "report": {"profit": 27108.19, "gross_profit": 106647.64, "gross_loss": -79539.45, "profit_factor": 1.3408,
+             "expected_payoff": 49.377, "recovery_factor": 3.218, "sharpe_ratio": 3.824,
+             "drawdown_percent_balance": 37.15, "drawdown_percent_equity": 39.88, "trades": 549,
+             "profit_trades": 238, "loss_trades": 311, "long_trades": 286, "short_trades": 263,
+             "max_consecutive_loss_trades": 5, "initial_deposit": 5000}}
+]

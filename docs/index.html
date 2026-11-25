@@ -34,7 +34,7 @@ textarea{width:100%;min-height:110px;font-family:ui-monospace,monospace;font-siz
 li{margin:3px 0}ul.c{list-style:none;padding:0}
 code{background:var(--bg);padding:1px 4px;border-radius:4px}
 .hash{font-family:ui-monospace,monospace;font-size:11px;color:var(--m);word-break:break-all}
-</style></head><body>
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:8px 0}.kpi{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:8px 10px}.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:10px;margin:8px 0}</style></head><body>
 <header><b>MIDAS Control <span class="m" style="font-weight:400">— khung Agent (chưa có Agent thật)</span></b>
 <span><button class="btn" id="exp">Xuất trạng thái</button> <label class="btn" style="display:inline-block;margin:0">Nhập<input type="file" id="imp" accept=".json" hidden></label></span></header>
 <nav id="nav"></nav>
@@ -84,9 +84,8 @@ code{background:var(--bg);padding:1px 4px;border-radius:4px}
 </section>
 
 <section id="pf">
-<p class="m">Performance Analyzer: kéo thả nhật ký <code>journal_*.csv</code> do EA v4 ghi. Bảng "Regime × Config → Hiệu suất" là thứ Experience Store lưu.</p>
+<p class="m">Báo cáo hiệu suất. Dữ liệu tự nạp từ <code>data/performance.json</code> (Agent cập nhật bằng <code>Agent/publish_performance.py --push</code>). Bạn cũng có thể kéo thả thêm <code>journal_*.csv</code> để xem tạm; file kéo thả không được lưu.</p>
 <div class="drop" id="drop">Kéo thả CSV vào đây hoặc <input type="file" id="f" multiple accept=".csv"></div>
-<div class="row"><div><label>Cảnh báo nếu kỳ vọng R của N lệnh gần nhất thấp hơn trước đó quá</label><input id="pwr" type="number" value="0.3" step="0.1"></div><div><label>N lệnh gần nhất</label><input id="pn" type="number" value="20"></div></div>
 <div id="pout"></div>
 </section>
 
@@ -183,17 +182,8 @@ $("#rrun").onclick=()=>{const t=S.rth[$("#rgrp").value],n=Math.max(1,+$("#rn").v
   if(cur===null){cur=l;note="khởi tạo"}else if(l!==cur){if(l===cand)cnt++;else{cand=l;cnt=1}if(cnt>=n){note=`đổi ${cur} → ${l}`;cur=l;cand=null;cnt=0}else note=`đang chờ ${l} (${cnt}/${n})`}else{cand=null;cnt=0}
   h+=`<tr><td class=n>${i+1}<td>${l}<td class=n>${cf.toFixed(2)}<td><b>${cur}</b><td class=m>${note}</tr>`});$("#rout").innerHTML=h+"</table>"};
 
-/* ---- performance ---- */
-function st(r){const n=r.length;let w=0,gp=0,gl=0,t=0;r.forEach(x=>{if(x.pnl_r>0)w++;t+=x.pnl_r;if(x.pnl>0)gp+=x.pnl;else gl-=x.pnl});return{n,wr:w/n*100,exp:t/n,tot:t,pf:gl>0?gp/gl:Infinity}}
-function grp(rows,f){const g={};rows.forEach(r=>{(g[f(r)]=g[f(r)]||[]).push(r)});return Object.keys(g).sort().map(k=>[k,g[k]])}
-function tb(t,g){return `<h3>${t}</h3><div class=wrap><table><tr><th>Nhóm<th class=n>Lệnh<th class=n>Thắng %<th class=n>Kỳ vọng R<th class=n>Tổng R<th class=n>PF</tr>`+g.map(([k,r])=>{const s=st(r);return `<tr><td>${k}<td class=n>${s.n}<td class=n>${s.wr.toFixed(1)}<td class="n ${s.exp>=0?"pos":"neg"}">${s.exp.toFixed(2)}<td class=n>${s.tot.toFixed(1)}<td class=n>${isFinite(s.pf)?s.pf.toFixed(2):"∞"}</tr>`}).join("")+"</table></div>"}
-function parse(x){const L=x.trim().split(/\r?\n/),h=L.shift().split(",");return L.map(l=>{const c=l.split(","),o={};h.forEach((k,i)=>o[k]=c[i]);o.pnl_r=+o.pnl_r;o.pnl=+o.pnl_money;return o})}
-async function load(fs){let rows=[];for(const f of fs)rows=rows.concat(parse(await f.text()));if(!rows.length){$("#pout").textContent="Trống";return}
- rows.sort((a,b)=>a.close_utc<b.close_utc?-1:1);window.ROWS=rows;
- let h=tb("Tất cả",[["ALL",rows]])+tb("Regime biến động × symbol",grp(rows,r=>r.symbol+" / "+r.vol_regime))+tb("Quan hệ HTF",grp(rows,r=>r.symbol+" / "+r.trend_regime))+tb("Setup",grp(rows,r=>r.tag.split("|").pop()))+tb("Giờ trên clock profile",grp(rows,r=>r.symbol+" "+r.clock_hour.padStart(2,"0")+"h"))+tb("Cách thoát",grp(rows,r=>r.exit+(r.tp1=="1"?" +TP1":"")));
- const N=+$("#pn").value,thr=+$("#pwr").value;let al="";grp(rows,r=>r.symbol).forEach(([k,r])=>{if(r.length<N*2)return;const rec=st(r.slice(-N)),old=st(r.slice(0,-N));if(old.exp-rec.exp>thr)al+=`<li class=neg>${k}: kỳ vọng ${N} lệnh gần nhất ${rec.exp.toFixed(2)}R so với ${old.exp.toFixed(2)}R trước đó. Đánh dấu cần review.</li>`});
- $("#pout").innerHTML=`<h3>Cảnh báo suy giảm</h3><ul>${al||"<li class=m>Không có (hoặc chưa đủ lệnh: cần ít nhất 2N lệnh mỗi symbol)</li>"}</ul>`+h}
-$("#f").onchange=e=>load(e.target.files);$("#drop").ondragover=e=>e.preventDefault();$("#drop").ondrop=e=>{e.preventDefault();load(e.dataTransfer.files)};
+/* ---- performance: see perf.js ---- */
+$("#f").onchange=e=>perfLoadFiles(e.target.files);$("#drop").ondragover=e=>e.preventDefault();$("#drop").ondrop=e=>{e.preventDefault();perfLoadFiles(e.dataTransfer.files)};
 
 /* ---- experience ---- */
 function rex(){const q=$("#xq").value.trim().toUpperCase(),hl=+$("#xh").value||90,now=Date.now();
@@ -248,4 +238,4 @@ fetch("assets.json").then(r=>r.json()).then(d=>{$("#at").innerHTML="<tr><th>Symb
 const T=["V4 vàng 03–11/2026 (cơ sở)","v3.4 LEGACY vàng cùng kỳ","v3.4 V3 vàng cùng kỳ","V4 USTEC, BTCUSD, DE30, USOIL, XAGUSD cùng kỳ","V4 EURUSD / USDJPY (xem tỉ lệ lệnh bị từ chối vì spread/R)","Blackout bật/tắt cho vàng và chỉ số","Walk-forward: tách đôi kỳ, so kỳ vọng R"];
 $("#bl").innerHTML=T.map((t,i)=>`<li><label style="color:inherit;font-size:14px"><input type=checkbox data-i=${i} ${S.bt[i]?"checked":""}> ${t}</label></li>`).join("");
 $("#bl").onchange=e=>{S.bt[e.target.dataset.i]=e.target.checked;save()};
-</script></body></html>
+</script><script src="perf.js"></script></body></html>
