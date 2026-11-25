@@ -3,13 +3,13 @@
 <title>MIDAS Control</title>
 <style>
 :root{--bg:#0b0f17;--side:#0e131d;--card:#111826;--bd:#1d2636;--fg:#e6eaf2;--m:#7d8aa3;--ac:#3b82f6;--g:#22c55e;--r:#ef4444;--y:#f59e0b}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,"Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15.5px/1.55 -apple-system,"Segoe UI",system-ui,sans-serif}
 .mono,td.n,.kpi>div:nth-child(2),.bartxt{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .app{display:flex;min-height:100vh}
-.side{width:220px;flex:none;background:var(--side);border-right:1px solid var(--bd);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:auto}
+.side{width:240px;flex:none;background:var(--side);border-right:1px solid var(--bd);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:auto}
 .brand{padding:18px 20px;font-size:17px;font-weight:700}
 .grp{padding:14px 20px 4px;font:11px ui-monospace,Consolas,monospace;letter-spacing:.08em;color:var(--m);text-transform:uppercase}
-.side a{display:flex;align-items:center;gap:8px;margin:1px 10px;padding:6px 10px;border-radius:6px;color:#aab4c8;cursor:pointer;text-decoration:none}
+.side a{display:flex;align-items:center;gap:10px;margin:2px 10px;padding:8px 12px;font-size:15px;border-radius:6px;color:#aab4c8;cursor:pointer;text-decoration:none}
 .side a:before{content:"";width:6px;height:6px;border-radius:50%;background:#3a4560}
 .side a.on{background:#16233f;color:var(--ac)}.side a.on:before{background:var(--ac)}
 .side .foot{margin-top:auto;padding:12px 20px;border-top:1px solid var(--bd);color:var(--m);font-size:13px}
@@ -20,20 +20,20 @@
 .demo.live{background:#0b2418;border-color:#14532d;color:#86efac}.demo.live b{background:var(--g);color:#052e16}
 .ticker{display:flex;gap:22px;flex-wrap:wrap;padding:7px 14px;border-bottom:1px solid var(--bd);font:12px ui-monospace,Consolas,monospace;color:var(--m)}
 .ticker b{color:var(--fg)}
-main{padding:14px 22px 60px;max-width:1250px}
-.ttl{display:flex;justify-content:space-between;align-items:center;margin:6px 0 14px}.ttl h1{font-size:22px;margin:0;font-weight:600}
+main{padding:18px 28px 70px;max-width:1500px;margin:0 auto}
+.ttl{display:flex;justify-content:space-between;align-items:center;margin:6px 0 14px}.ttl h1{font-size:26px;margin:0;font-weight:600}
 .chip{font:12px ui-monospace,Consolas,monospace;color:var(--m)}.chip b{color:var(--g)}
 section{display:none}section.on{display:block}
-h2{font:12px ui-monospace,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ac);margin:20px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--bd)}
-h3{font:12px ui-monospace,Consolas,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--m);margin:16px 0 6px}
+h2{font:13.5px ui-monospace,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ac);margin:20px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--bd)}
+h3{font:13.5px ui-monospace,Consolas,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--m);margin:16px 0 6px}
 .card,.panel{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin:10px 0}
-.pt{font:11px ui-monospace,Consolas,monospace;letter-spacing:.08em;color:var(--m);text-transform:uppercase;margin-bottom:10px}
+.pt{font:12.5px ui-monospace,Consolas,monospace;letter-spacing:.08em;color:var(--m);text-transform:uppercase;margin-bottom:10px}
 table{border-collapse:collapse;width:100%;background:var(--card)}
-th{font:11px ui-monospace,Consolas,monospace;letter-spacing:.05em;color:var(--m);text-transform:uppercase;font-weight:500;border-bottom:1px solid var(--bd);padding:7px 8px;text-align:left}
-td{border-bottom:1px solid var(--bd);padding:5px 8px;text-align:left;vertical-align:top}
+th{font:12.5px ui-monospace,Consolas,monospace;letter-spacing:.05em;color:var(--m);text-transform:uppercase;font-weight:500;border-bottom:1px solid var(--bd);padding:7px 8px;text-align:left}
+td{border-bottom:1px solid var(--bd);padding:8px 10px;font-size:14.5px;text-align:left;vertical-align:top}
 td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 .wrap{overflow-x:auto}
-label{display:block;margin:6px 0 2px;color:var(--m);font:11px ui-monospace,Consolas,monospace;text-transform:uppercase;letter-spacing:.04em}
+label{display:block;margin:6px 0 3px;color:var(--m);font:12.5px ui-monospace,Consolas,monospace;text-transform:uppercase;letter-spacing:.04em}
 input,select,textarea{background:#0b1220;color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:5px 8px;font:inherit;max-width:100%}
 textarea{width:100%;min-height:110px;font:12px ui-monospace,Consolas,monospace}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}.row>div{flex:1;min-width:130px}
@@ -52,11 +52,11 @@ textarea{width:100%;min-height:110px;font:12px ui-monospace,Consolas,monospace}
 li{margin:3px 0}ul.c{list-style:none;padding:0}
 code{background:#0b1220;padding:1px 5px;border-radius:4px;font-size:12px}
 .hash{font:11px ui-monospace,Consolas,monospace;color:var(--m);word-break:break-all}
-.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:8px 0}
-.kpi{background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:10px 12px}
-.kpi>div:first-child{font:11px ui-monospace,Consolas,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--m)!important}
-.kpi>div:nth-child(2){font-size:22px!important;margin-top:2px}
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:10px;margin:8px 0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin:10px 0}
+.kpi{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:14px 16px}
+.kpi>div:first-child{font:12.5px ui-monospace,Consolas,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--m)!important}
+.kpi>div:nth-child(2){font-size:26px!important;margin-top:4px;font-weight:600}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));gap:14px;margin:10px 0;align-items:start}
 .bar{display:flex;align-items:center;gap:12px;margin:10px 0}.bar .bl{width:150px;font:13px ui-monospace,Consolas,monospace}
 .bar .bt{flex:1;height:6px;background:#1a2233;border-radius:3px;overflow:hidden}.bar .bt i{display:block;height:100%;border-radius:3px}
 .bar .bartxt{width:130px;text-align:right;color:var(--m);font-size:12px}
@@ -65,7 +65,7 @@ code{background:#0b1220;padding:1px 5px;border-radius:4px;font-size:12px}
 #gate.on{display:flex}#gate .box{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:22px;max-width:460px;width:100%}
 @media(max-width:800px){.app{flex-direction:column}.side{width:100%;height:auto;position:static;flex-direction:row;flex-wrap:wrap}.grp{display:none}.side .foot{display:none}.brand{width:100%}}
 .kpis .kpi{min-width:0}
-.grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:10px;margin:8px 0}</style></head><body>
+.grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px;margin:10px 0;align-items:start}</style></head><body>
 <div id="gate"><div class="box">
 <div class="brand" style="padding:0 0 8px">MIDAS Control</div>
 <p class="m" style="margin:0 0 10px">Nhập mật khẩu để mở dữ liệu hiệu suất. Dữ liệu được mã hóa AES-256 và chỉ giải mã trong trình duyệt của bạn; mật khẩu không gửi đi đâu.</p>

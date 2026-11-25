@@ -38,65 +38,88 @@
   const botOf = t => t.symbol + " #" + t.magic;
 
   /* ---------- svg helpers ---------- */
-  function svgWrap(w, h, inner) { return `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:${w}px;background:var(--card);border:1px solid var(--bd);border-radius:8px">${inner}</svg>`; }
-  function axes(w, h, p, x0, x1, y0, y1, fmtY) {
+  const W = 640;
+  function svgWrap(w, h, inner) { return `<svg viewBox="0 0 ${w} ${h}" width="100%" style="display:block;background:var(--card);border:1px solid var(--bd);border-radius:8px">${inner}</svg>`; }
+  const ttl = (t) => `<text x="16" y="24" font-size="15" font-weight="600" fill="${css("--fg")}">${t}</text>`;
+  function axes(w, h, p, y0, y1, fmtY) {
     let s = ""; const m = css("--m"), bd = css("--bd");
     for (let i = 0; i <= 4; i++) {
       const v = y0 + (y1 - y0) * i / 4, y = p.t + (h - p.t - p.b) * (1 - i / 4);
-      s += `<line x1="${p.l}" x2="${w - p.r}" y1="${y}" y2="${y}" stroke="${bd}"/><text x="${p.l - 4}" y="${y + 4}" font-size="10" text-anchor="end" fill="${m}">${(fmtY || (v => v.toFixed(1)))(v)}</text>`;
+      s += `<line x1="${p.l}" x2="${w - p.r}" y1="${y}" y2="${y}" stroke="${bd}"/><text x="${p.l - 8}" y="${y + 4}" font-size="12" text-anchor="end" fill="${m}">${(fmtY || (q => q.toFixed(1)))(v)}</text>`;
     }
     return s;
   }
   function lineChart(title, series, opts = {}) {
-    const w = 560, h = 230, p = { l: 48, r: 10, t: 24, b: 22 };
-    const all = series.flatMap(s => s.pts); if (all.length < 2) return card(title, "<p class=m>Chưa đủ dữ liệu</p>");
+    const w = W, h = 300, p = { l: 62, r: 16, t: 42, b: 30 };
+    const all = series.flatMap(s => s.pts); if (all.length < 2) return svgWrap(w, 120, ttl(title) + `<text x="16" y="70" font-size="13" fill="${css("--m")}">Chưa đủ dữ liệu</text>`);
     let y0 = Math.min(0, ...all.map(a => a[1])), y1 = Math.max(0, ...all.map(a => a[1])); if (y0 === y1) y1 = y0 + 1;
     const n = Math.max(...series.map(s => s.pts.length)) - 1 || 1;
     const X = i => p.l + (w - p.l - p.r) * i / n, Y = v => p.t + (h - p.t - p.b) * (1 - (v - y0) / (y1 - y0));
-    let s = axes(w, h, p, 0, n, y0, y1, opts.fmt);
+    let s = axes(w, h, p, y0, y1, opts.fmt);
     series.forEach(se => {
       const d = se.pts.map((a, i) => (i ? "L" : "M") + X(i).toFixed(1) + "," + Y(a[1]).toFixed(1)).join("");
-      if (se.fill) s += `<path d="${d}L${X(se.pts.length - 1)},${Y(0)}L${X(0)},${Y(0)}Z" fill="${se.color}" opacity=".18"/>`;
-      s += `<path d="${d}" fill="none" stroke="${se.color}" stroke-width="1.6"/>`;
+      if (se.fill) s += `<path d="${d}L${X(se.pts.length - 1)},${Y(0)}L${X(0)},${Y(0)}Z" fill="${se.color}" opacity=".2"/>`;
+      s += `<path d="${d}" fill="none" stroke="${se.color}" stroke-width="2"/>`;
     });
-    s += `<text x="${p.l}" y="14" font-size="12" fill="${css("--fg")}">${title}</text>`;
-    const lbl = series[0].pts; if (lbl.length) s += `<text x="${p.l}" y="${h - 6}" font-size="10" fill="${css("--m")}">${lbl[0][0].slice(0, 10)}</text><text x="${w - p.r}" y="${h - 6}" font-size="10" text-anchor="end" fill="${css("--m")}">${lbl[lbl.length - 1][0].slice(0, 10)}</text>`;
+    const lbl = series[0].pts;
+    s += ttl(title) + `<text x="${p.l}" y="${h - 8}" font-size="12" fill="${css("--m")}">${lbl[0][0].slice(0, 10)}</text><text x="${w - p.r}" y="${h - 8}" font-size="12" text-anchor="end" fill="${css("--m")}">${lbl[lbl.length - 1][0].slice(0, 10)}</text>`;
     return svgWrap(w, h, s);
   }
-  function barChart(title, items, opts = {}) { // items: [label, value, color?]
-    const w = 560, rowH = 20, h = 30 + items.length * rowH, p = { l: 150, r: 50 };
-    if (!items.length) return card(title, "<p class=m>Không có dữ liệu</p>");
-    const mx = Math.max(...items.map(i => Math.abs(i[1])), 1e-9), mid = p.l + (w - p.l - p.r) / 2, half = (w - p.l - p.r) / 2;
-    let s = `<text x="10" y="16" font-size="12" fill="${css("--fg")}">${title}</text><line x1="${mid}" x2="${mid}" y1="22" y2="${h - 4}" stroke="${css("--bd")}"/>`;
+  function barChart(title, items, opts = {}) { // items: [label, value, color?, count?]
+    const w = W, rowH = 34, h = 52 + Math.max(1, items.length) * rowH, lw = 150, rw = 96;
+    if (!items.length) return svgWrap(w, 110, ttl(title) + `<text x="16" y="70" font-size="13" fill="${css("--m")}">Không có dữ liệu</text>`);
+    const mx = Math.max(...items.map(i => Math.abs(i[1])), 1e-9), mid = lw + (w - lw - rw) / 2, half = (w - lw - rw) / 2;
+    let s = ttl(title) + `<line x1="${mid}" x2="${mid}" y1="38" y2="${h - 8}" stroke="${css("--bd")}"/>`;
     items.forEach((it, i) => {
-      const y = 28 + i * rowH, len = Math.abs(it[1]) / mx * half * 0.95, pos = it[1] >= 0;
-      s += `<text x="${p.l - 6}" y="${y + 12}" font-size="11" text-anchor="end" fill="${css("--m")}">${String(it[0]).slice(0, 22)}</text><rect x="${pos ? mid : mid - len}" y="${y + 2}" width="${len}" height="13" fill="${it[2] || (pos ? css("--g") : css("--r"))}" rx="2"/><text x="${pos ? mid + len + 4 : mid - len - 4}" y="${y + 12}" font-size="10" text-anchor="${pos ? "start" : "end"}" fill="${css("--fg")}">${(opts.fmt || (v => v.toFixed(2)))(it[1])}${it[3] ? " (" + it[3] + ")" : ""}</text>`;
+      const y = 46 + i * rowH, len = Math.max(2, Math.abs(it[1]) / mx * half), pos = it[1] >= 0;
+      s += `<text x="${lw - 10}" y="${y + 17}" font-size="13" text-anchor="end" fill="${css("--fg")}">${String(it[0]).slice(0, 18)}</text><rect x="${pos ? mid : mid - len}" y="${y + 3}" width="${len}" height="20" fill="${it[2] || (pos ? css("--g") : css("--r"))}" rx="3"/>`;
+      const txt = (opts.fmt || (v => v.toFixed(2)))(it[1]) + (it[3] != null ? "  (" + it[3] + ")" : "");
+      const inside = len > 110;
+      s += `<text x="${pos ? (inside ? mid + len - 6 : mid + len + 6) : (inside ? mid - len + 6 : mid - len - 6)}" y="${y + 18}" font-size="12" font-weight="600" text-anchor="${pos ? (inside ? "end" : "start") : (inside ? "start" : "end")}" fill="${inside ? "#fff" : css("--fg")}">${txt}</text>`;
     });
     return svgWrap(w, h, s);
+  }
+  function columnChart(title, items) { // vertical bars, full width: items [label, value, null, count]
+    const w = 1300, h = 320, p = { l: 56, r: 16, t: 48, b: 42 };
+    if (!items.length) return svgWrap(w, 110, ttl(title));
+    const slot = {}; items.forEach(i => { slot[+i[0]] = i; });
+    items = Array.from({ length: 24 }, (_, hh) => slot[hh] ? [String(hh).padStart(2, "0"), slot[hh][1], null, slot[hh][3]] : [String(hh).padStart(2, "0"), 0, null, 0]);
+    const mx = Math.max(...items.map(i => Math.abs(i[1])), 1e-9), y0 = Math.min(0, ...items.map(i => i[1])), y1 = Math.max(0, ...items.map(i => i[1]));
+    const Y = v => p.t + (h - p.t - p.b) * (1 - (v - y0) / ((y1 - y0) || 1)), bw = (w - p.l - p.r) / items.length;
+    let s = axes(w, h, p, y0, y1, v => v.toFixed(0)) + `<line x1="${p.l}" x2="${w - p.r}" y1="${Y(0)}" y2="${Y(0)}" stroke="${css("--m")}"/>`;
+    items.forEach((it, i) => {
+      const x = p.l + i * bw, yy = Y(it[1]), y0b = Y(0), top = Math.min(yy, y0b), ht = Math.max(2, Math.abs(yy - y0b));
+      s += `<rect x="${x + 4}" y="${top}" width="${bw - 8}" height="${ht}" rx="3" fill="${it[1] >= 0 ? css("--g") : css("--r")}"/>`;
+      s += `<text x="${x + bw / 2}" y="${h - 22}" font-size="13" text-anchor="middle" fill="${css("--fg")}">${it[0]}h</text><text x="${x + bw / 2}" y="${h - 7}" font-size="11" text-anchor="middle" fill="${css("--m")}">n=${it[3]}</text>`;
+      if (bw > 34) s += `<text x="${x + bw / 2}" y="${it[1] >= 0 ? top - 5 : top + ht + 13}" font-size="12" text-anchor="middle" fill="${css("--fg")}">${it[1].toFixed(0)}</text>`;
+    });
+    return svgWrap(w, h, s + ttl(title));
   }
   function histogram(title, vals, lo, hi, bins) {
-    const w = 560, h = 210, p = { l: 36, r: 10, t: 24, b: 24 };
-    if (!vals.length) return card(title, "<p class=m>Không có dữ liệu</p>");
+    const w = W, h = 300, p = { l: 52, r: 16, t: 42, b: 34 };
+    if (!vals.length) return svgWrap(w, 110, ttl(title));
     const c = new Array(bins).fill(0), step = (hi - lo) / bins;
     vals.forEach(v => { c[Math.max(0, Math.min(bins - 1, Math.floor((v - lo) / step)))]++; });
     const mx = Math.max(...c), bw = (w - p.l - p.r) / bins;
-    let s = `<text x="${p.l}" y="14" font-size="12" fill="${css("--fg")}">${title}</text>`;
+    let s = ttl(title);
+    for (let i = 0; i <= 4; i++) { const y = p.t + (h - p.t - p.b) * (1 - i / 4); s += `<line x1="${p.l}" x2="${w - p.r}" y1="${y}" y2="${y}" stroke="${css("--bd")}"/><text x="${p.l - 8}" y="${y + 4}" font-size="12" text-anchor="end" fill="${css("--m")}">${Math.round(mx * i / 4)}</text>`; }
     c.forEach((k, i) => {
       const mid = lo + step * (i + .5), bh = (h - p.t - p.b) * k / mx;
-      s += `<rect x="${p.l + i * bw + 1}" y="${h - p.b - bh}" width="${bw - 2}" height="${bh}" fill="${mid >= 0 ? css("--g") : css("--r")}" opacity=".85"/>`;
-      if (i % Math.ceil(bins / 8) === 0) s += `<text x="${p.l + i * bw}" y="${h - 8}" font-size="10" fill="${css("--m")}">${(lo + step * i).toFixed(1)}</text>`;
+      s += `<rect x="${p.l + i * bw + 1.5}" y="${h - p.b - bh}" width="${bw - 3}" height="${bh}" rx="2" fill="${mid >= 0 ? css("--g") : css("--r")}" opacity=".9"/>`;
+      if (i % 2 === 0) s += `<text x="${p.l + i * bw}" y="${h - 12}" font-size="12" fill="${css("--m")}">${(lo + step * i).toFixed(1)}</text>`;
     });
-    s += `<text x="${p.l - 4}" y="${p.t + 6}" font-size="10" text-anchor="end" fill="${css("--m")}">${mx}</text>`;
     return svgWrap(w, h, s);
   }
   function scatter(title, pts) { // x = mae, y = mfe (both R), colour by win
-    const w = 560, h = 260, p = { l: 40, r: 10, t: 24, b: 28 };
-    if (!pts.length) return card(title, "<p class=m>Không có dữ liệu</p>");
-    const mx = Math.min(8, Math.max(2, ...pts.map(a => a[0]))), my = Math.min(12, Math.max(2, ...pts.map(a => a[1])));
+    const w = W, h = 300, p = { l: 52, r: 16, t: 42, b: 38 };
+    if (!pts.length) return svgWrap(w, 110, ttl(title));
+    const mx = Math.min(6, Math.max(2, ...pts.map(a => a[0]))), my = Math.min(12, Math.max(3, ...pts.map(a => a[1])));
     const X = v => p.l + (w - p.l - p.r) * Math.min(v, mx) / mx, Y = v => h - p.b - (h - p.t - p.b) * Math.min(v, my) / my;
-    let s = `<text x="${p.l}" y="14" font-size="12" fill="${css("--fg")}">${title}</text><line x1="${X(1)}" x2="${X(1)}" y1="${p.t}" y2="${h - p.b}" stroke="${css("--bd")}" stroke-dasharray="3"/><text x="${X(1) + 3}" y="${p.t + 10}" font-size="10" fill="${css("--m")}">MAE = 1R (chạm SL)</text>`;
-    pts.forEach(a => { s += `<circle cx="${X(a[0])}" cy="${Y(a[1])}" r="3" fill="${a[2] > 0 ? css("--g") : css("--r")}" opacity=".7"/>`; });
-    s += `<text x="${w / 2}" y="${h - 6}" font-size="10" text-anchor="middle" fill="${css("--m")}">MAE (R, bất lợi tối đa)</text><text x="12" y="${h / 2}" font-size="10" fill="${css("--m")}" transform="rotate(-90 12 ${h / 2})">MFE (R, thuận lợi tối đa)</text>`;
+    let s = ttl(title);
+    for (let i = 0; i <= 4; i++) { const y = p.t + (h - p.t - p.b) * (1 - i / 4); s += `<line x1="${p.l}" x2="${w - p.r}" y1="${y}" y2="${y}" stroke="${css("--bd")}"/><text x="${p.l - 8}" y="${y + 4}" font-size="12" text-anchor="end" fill="${css("--m")}">${(my * i / 4).toFixed(0)}</text>`; }
+    s += `<line x1="${X(1)}" x2="${X(1)}" y1="${p.t}" y2="${h - p.b}" stroke="${css("--y")}" stroke-dasharray="4"/><text x="${X(1) + 6}" y="${p.t + 14}" font-size="12" fill="${css("--y")}">MAE = 1R (chạm SL)</text>`;
+    pts.forEach(a => { s += `<circle cx="${X(a[0])}" cy="${Y(a[1])}" r="3.5" fill="${a[2] > 0 ? css("--g") : css("--r")}" opacity=".7"/>`; });
+    s += `<text x="${w / 2}" y="${h - 8}" font-size="12" text-anchor="middle" fill="${css("--m")}">MAE (R, bất lợi tối đa)</text><text x="14" y="${h / 2}" font-size="12" fill="${css("--m")}" transform="rotate(-90 14 ${h / 2})" text-anchor="middle">MFE (R)</text>`;
     return svgWrap(w, h, s);
   }
   function heat(title, rows) { // monthly R table
@@ -120,8 +143,8 @@
 
 
   /* ---------- per-symbol small multiples ---------- */
-  function miniCurve(pts, dd, w = 300, h = 120) {
-    const p = { l: 34, r: 6, t: 8, b: 16 };
+  function miniCurve(pts, dd, w = 360, h = 150) {
+    const p = { l: 44, r: 8, t: 10, b: 20 };
     const all = pts.map(a => a[1]).concat(dd.map(a => a[1]), [0]);
     let y0 = Math.min(...all), y1 = Math.max(...all); if (y0 === y1) y1 = y0 + 1;
     const n = Math.max(1, pts.length - 1);
@@ -130,8 +153,8 @@
     let s = `<line x1="${p.l}" x2="${w - p.r}" y1="${Y(0)}" y2="${Y(0)}" stroke="${css("--bd")}"/>`;
     s += `<path d="${line(dd)}L${X(dd.length - 1)},${Y(0)}L${X(0)},${Y(0)}Z" fill="${css("--r")}" opacity=".2"/>`;
     s += `<path d="${line(pts)}" fill="none" stroke="${css("--ac")}" stroke-width="1.5"/>`;
-    s += `<text x="${p.l - 3}" y="${p.t + 8}" font-size="9" text-anchor="end" fill="${css("--m")}">${y1.toFixed(0)}R</text><text x="${p.l - 3}" y="${h - p.b}" font-size="9" text-anchor="end" fill="${css("--m")}">${y0.toFixed(0)}R</text>`;
-    s += `<text x="${p.l}" y="${h - 3}" font-size="9" fill="${css("--m")}">${pts[0][0].slice(0, 7)}</text><text x="${w - p.r}" y="${h - 3}" font-size="9" text-anchor="end" fill="${css("--m")}">${pts[pts.length - 1][0].slice(0, 7)}</text>`;
+    s += `<text x="${p.l - 3}" y="${p.t + 8}" font-size="11" text-anchor="end" fill="${css("--m")}">${y1.toFixed(0)}R</text><text x="${p.l - 3}" y="${h - p.b}" font-size="11" text-anchor="end" fill="${css("--m")}">${y0.toFixed(0)}R</text>`;
+    s += `<text x="${p.l}" y="${h - 3}" font-size="11" fill="${css("--m")}">${pts[0][0].slice(0, 7)}</text><text x="${w - p.r}" y="${h - 3}" font-size="11" text-anchor="end" fill="${css("--m")}">${pts[pts.length - 1][0].slice(0, 7)}</text>`;
     return `<svg viewBox="0 0 ${w} ${h}" width="100%">${s}</svg>`;
   }
   function yearBars(rows) {
@@ -147,9 +170,9 @@
     return `<div class="grid3">${shown.map(([k, r, x]) => {
       let c = 0, pk = 0; const pts = [], dd = [];
       r.forEach(t => { c += t.pnl_r; pk = Math.max(pk, c); pts.push([t.close_utc, c]); dd.push([t.close_utc, c - pk]); });
-      return `<div class=card style="margin:0"><div style="display:flex;justify-content:space-between;gap:8px"><b style="font-size:13px;word-break:break-all">${k}</b><span class="${x.R >= 0 ? "pos" : "neg"} mono">${f2(x.R, 1)}R</span></div>
+      return `<div class=card style="margin:0"><div style="display:flex;justify-content:space-between;gap:8px"><b style="font-size:15px;word-break:break-all">${k}</b><span class="${x.R >= 0 ? "pos" : "neg"} mono">${f2(x.R, 1)}R</span></div>
       ${miniCurve(pts, dd)}
-      <div class=m style="font:11px ui-monospace,Consolas,monospace">${x.n} lệnh · thắng ${f2(x.wr, 0)}% · PF ${f2(x.pf)} · kỳ vọng ${f2(x.exp)}R · DD ${f2(x.maxDdR, 1)}R · Sharpe ${f2(x.sharpe, 1)}</div>
+      <div class=m style="font:12.5px ui-monospace,Consolas,monospace;line-height:1.5;margin-top:4px">${x.n} lệnh · thắng ${f2(x.wr, 0)}% · PF ${f2(x.pf)} · kỳ vọng ${f2(x.exp)}R · DD ${f2(x.maxDdR, 1)}R · Sharpe ${f2(x.sharpe, 1)}</div>
       <div style="margin-top:4px">${yearBars(r)}</div></div>`;
     }).join("")}</div>${items.length > 30 ? `<p class=m>Hiển thị 30/${items.length} nhóm có R cao nhất; lọc theo lần chạy để xem các nhóm còn lại.</p>` : ""}`;
   }
@@ -176,9 +199,10 @@
     h += `<div class=wrap><table><tr><th>Bot<th class=n>Lệnh<th class=n>Thắng %<th class=n>Kỳ vọng R<th class=n>Tổng R<th class=n>PF<th class=n>Payoff<th class=n>Max DD R<th class=n>Sharpe<th class=n>Recovery<th class=n>Chuỗi thua<th class=n>MFE<th class=n>MAE</tr>${botS.map(([k, x]) => `<tr><td>${k}<td class=n>${x.n}<td class=n>${f2(x.wr, 1)}<td class="n ${x.exp >= 0 ? "pos" : "neg"}">${f2(x.exp)}<td class=n>${f2(x.R, 1)}<td class=n>${f2(x.pf)}<td class=n>${f2(x.payoff)}<td class=n>${f2(x.maxDdR, 1)}<td class=n>${f2(x.sharpe)}<td class=n>${f2(x.recovery)}<td class=n>${x.maxLossStreak}<td class=n>${f2(x.mfe)}<td class=n>${f2(x.mae)}</tr>`).join("")}</table></div>`;
     h += `<h3>Hiệu suất từng mã (đường vốn R, vùng đỏ = drawdown, thẻ = R theo năm)</h3>${symbolCards(rows)}`;
     // distributions
-    h += `<h3>Phân bố</h3><div class=grid2>${histogram("Phân bố kết quả mỗi lệnh (R)", rows.map(t => t.pnl_r), -2, 8, 20)}${scatter("MFE so với MAE (hiệu quả thoát lệnh)", rows.map(t => [t.mae_r, t.mfe_r, t.pnl_r]))}</div>`;
+    h += `<h3>Phân bố kết quả</h3><div class=grid2>${histogram("Phân bố kết quả mỗi lệnh (R)", rows.map(t => t.pnl_r), -2, 8, 20)}${scatter("MFE so với MAE (hiệu quả thoát lệnh)", rows.map(t => [t.mae_r, t.mfe_r, t.pnl_r]))}</div>`;
     const by = (f, min = 1) => Object.entries(group(rows, f)).sort().filter(([, r]) => r.length >= min).map(([k, r]) => [k, r.reduce((a, t) => a + t.pnl_r, 0), null, r.length]);
-    h += `<div class=grid2>${barChart("Tổng R theo giờ (clock của profile)", by(t => String(t.clock_hour).padStart(2, "0") + "h"), { fmt: v => v.toFixed(1) })}${barChart("Tổng R theo regime biến động", by(t => t.vol_regime), { fmt: v => v.toFixed(1) })}${barChart("Tổng R theo quan hệ với xu hướng HTF", by(t => t.trend_regime), { fmt: v => v.toFixed(1) })}${barChart("Tổng R theo setup", by(t => (t.tag || "").split("|").pop()), { fmt: v => v.toFixed(1) })}${barChart("Tổng R theo hướng", by(t => t.dir === "L" ? "Mua" : "Bán"), { fmt: v => v.toFixed(1) })}${barChart("Tổng R theo cách thoát", by(t => t.exit + (t.tp1 == 1 ? " +TP1" : "")), { fmt: v => v.toFixed(1) })}</div>`;
+    h += `<h3>Theo giờ</h3>${columnChart("Tổng R theo giờ (clock của profile)", by(t => String(t.clock_hour).padStart(2, "0")))}`;
+    h += `<h3>Theo nhóm</h3><div class=grid2>${barChart("Tổng R theo regime biến động", by(t => t.vol_regime), { fmt: v => v.toFixed(1) })}${barChart("Tổng R theo quan hệ với xu hướng HTF", by(t => t.trend_regime), { fmt: v => v.toFixed(1) })}${barChart("Tổng R theo setup", by(t => (t.tag || "").split("|").pop()), { fmt: v => v.toFixed(1) })}${barChart("Tổng R theo hướng", by(t => t.dir === "L" ? "Mua" : "Bán"), { fmt: v => v.toFixed(1) })}${barChart("Tổng R theo cách thoát", by(t => t.exit + (t.tp1 == 1 ? " +TP1" : "")), { fmt: v => v.toFixed(1) })}</div>`;
     h += `<h3>R theo tháng</h3>${heat("Năm", rows)}`;
     root.innerHTML = h + runsTable(); bind();
   }
