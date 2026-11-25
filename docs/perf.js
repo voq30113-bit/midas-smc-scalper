@@ -118,6 +118,42 @@
   }
   const card = (t, b) => `<div class=card><b>${t}</b>${b}</div>`;
 
+
+  /* ---------- per-symbol small multiples ---------- */
+  function miniCurve(pts, dd, w = 300, h = 120) {
+    const p = { l: 34, r: 6, t: 8, b: 16 };
+    const all = pts.map(a => a[1]).concat(dd.map(a => a[1]), [0]);
+    let y0 = Math.min(...all), y1 = Math.max(...all); if (y0 === y1) y1 = y0 + 1;
+    const n = Math.max(1, pts.length - 1);
+    const X = i => p.l + (w - p.l - p.r) * i / n, Y = v => p.t + (h - p.t - p.b) * (1 - (v - y0) / (y1 - y0));
+    const line = a => a.map((q, i) => (i ? "L" : "M") + X(i).toFixed(1) + "," + Y(q[1]).toFixed(1)).join("");
+    let s = `<line x1="${p.l}" x2="${w - p.r}" y1="${Y(0)}" y2="${Y(0)}" stroke="${css("--bd")}"/>`;
+    s += `<path d="${line(dd)}L${X(dd.length - 1)},${Y(0)}L${X(0)},${Y(0)}Z" fill="${css("--r")}" opacity=".2"/>`;
+    s += `<path d="${line(pts)}" fill="none" stroke="${css("--ac")}" stroke-width="1.5"/>`;
+    s += `<text x="${p.l - 3}" y="${p.t + 8}" font-size="9" text-anchor="end" fill="${css("--m")}">${y1.toFixed(0)}R</text><text x="${p.l - 3}" y="${h - p.b}" font-size="9" text-anchor="end" fill="${css("--m")}">${y0.toFixed(0)}R</text>`;
+    s += `<text x="${p.l}" y="${h - 3}" font-size="9" fill="${css("--m")}">${pts[0][0].slice(0, 7)}</text><text x="${w - p.r}" y="${h - 3}" font-size="9" text-anchor="end" fill="${css("--m")}">${pts[pts.length - 1][0].slice(0, 7)}</text>`;
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%">${s}</svg>`;
+  }
+  function yearBars(rows) {
+    const g = group(rows, t => t.close_utc.slice(0, 4)), ys = Object.keys(g).sort();
+    return ys.map(y => { const r = g[y].reduce((a, t) => a + t.pnl_r, 0); return `<span class="tag ${r >= 0 ? "s" : "c"}" title="${g[y].length} lệnh">${y.slice(2)}: ${r >= 0 ? "+" : ""}${r.toFixed(1)}R</span>`; }).join(" ");
+  }
+  function symbolCards(rows) {
+    const key = t => (VIEW.run === "ALL" ? t.run + " · " : "") + t.symbol;
+    const g = group(rows, key);
+    const items = Object.entries(g).filter(([, r]) => r.length >= 3).map(([k, r]) => [k, r, stats(r)]).sort((a, b) => b[2].R - a[2].R);
+    if (!items.length) return "<p class=m>Chưa có mã nào đủ 3 lệnh.</p>";
+    const shown = items.slice(0, 30);
+    return `<div class="grid3">${shown.map(([k, r, x]) => {
+      let c = 0, pk = 0; const pts = [], dd = [];
+      r.forEach(t => { c += t.pnl_r; pk = Math.max(pk, c); pts.push([t.close_utc, c]); dd.push([t.close_utc, c - pk]); });
+      return `<div class=card style="margin:0"><div style="display:flex;justify-content:space-between;gap:8px"><b style="font-size:13px;word-break:break-all">${k}</b><span class="${x.R >= 0 ? "pos" : "neg"} mono">${f2(x.R, 1)}R</span></div>
+      ${miniCurve(pts, dd)}
+      <div class=m style="font:11px ui-monospace,Consolas,monospace">${x.n} lệnh · thắng ${f2(x.wr, 0)}% · PF ${f2(x.pf)} · kỳ vọng ${f2(x.exp)}R · DD ${f2(x.maxDdR, 1)}R · Sharpe ${f2(x.sharpe, 1)}</div>
+      <div style="margin-top:4px">${yearBars(r)}</div></div>`;
+    }).join("")}</div>${items.length > 30 ? `<p class=m>Hiển thị 30/${items.length} nhóm có R cao nhất; lọc theo lần chạy để xem các nhóm còn lại.</p>` : ""}`;
+  }
+
   /* ---------- rendering ---------- */
   function kpi(label, val, cls, hint) { return `<div class="kpi"><div class="m" style="font-size:12px">${label}</div><div class="${cls || ""}" style="font-size:20px;font-weight:600">${val}</div>${hint ? `<div class=m style="font-size:11px">${hint}</div>` : ""}</div>`; }
   function render() {
@@ -138,6 +174,7 @@
     const gb = group(rows, botOf), botS = Object.keys(gb).sort().map(k => [k, stats(gb[k])]);
     h += `<h3>Theo từng bot</h3><div class=grid2>${barChart("Tổng R theo bot", botS.map(([k, x]) => [k, x.R, null, x.n + " lệnh"]), { fmt: v => v.toFixed(1) })}${barChart("Kỳ vọng R / lệnh theo bot", botS.map(([k, x]) => [k, x.exp]))}</div>`;
     h += `<div class=wrap><table><tr><th>Bot<th class=n>Lệnh<th class=n>Thắng %<th class=n>Kỳ vọng R<th class=n>Tổng R<th class=n>PF<th class=n>Payoff<th class=n>Max DD R<th class=n>Sharpe<th class=n>Recovery<th class=n>Chuỗi thua<th class=n>MFE<th class=n>MAE</tr>${botS.map(([k, x]) => `<tr><td>${k}<td class=n>${x.n}<td class=n>${f2(x.wr, 1)}<td class="n ${x.exp >= 0 ? "pos" : "neg"}">${f2(x.exp)}<td class=n>${f2(x.R, 1)}<td class=n>${f2(x.pf)}<td class=n>${f2(x.payoff)}<td class=n>${f2(x.maxDdR, 1)}<td class=n>${f2(x.sharpe)}<td class=n>${f2(x.recovery)}<td class=n>${x.maxLossStreak}<td class=n>${f2(x.mfe)}<td class=n>${f2(x.mae)}</tr>`).join("")}</table></div>`;
+    h += `<h3>Hiệu suất từng mã (đường vốn R, vùng đỏ = drawdown, thẻ = R theo năm)</h3>${symbolCards(rows)}`;
     // distributions
     h += `<h3>Phân bố</h3><div class=grid2>${histogram("Phân bố kết quả mỗi lệnh (R)", rows.map(t => t.pnl_r), -2, 8, 20)}${scatter("MFE so với MAE (hiệu quả thoát lệnh)", rows.map(t => [t.mae_r, t.mfe_r, t.pnl_r]))}</div>`;
     const by = (f, min = 1) => Object.entries(group(rows, f)).sort().filter(([, r]) => r.length >= min).map(([k, r]) => [k, r.reduce((a, t) => a + t.pnl_r, 0), null, r.length]);
