@@ -16,3 +16,6 @@
 !backtests/
 !backtests/*.json
 !backtests/*_journal.csv
+!Agent/
+!Agent/*.py
+!Agent/README.md

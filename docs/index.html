@@ -1,88 +1,251 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MIDAS Control</title>
 <style>
-:root{--bg:#f6f7f9;--fg:#1c2330;--card:#fff;--bd:#d9dde5;--ac:#2f6df6;--g:#1a8f5a;--r:#c8403f;--m:#6b7587}
-@media(prefers-color-scheme:dark){:root{--bg:#12161d;--fg:#e4e8ef;--card:#1b212b;--bd:#2d3542;--ac:#6b9bff;--g:#4cc58a;--r:#ef7b7a;--m:#8d97a8}}
-body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,sans-serif}
-header{padding:14px 16px;border-bottom:1px solid var(--bd);font-weight:600}
+:root{--bg:#f4f5f8;--fg:#1c2330;--card:#fff;--bd:#d9dde5;--ac:#2f6df6;--g:#1a8f5a;--r:#c8403f;--y:#b7791f;--m:#6b7587}
+@media(prefers-color-scheme:dark){:root{--bg:#12161d;--fg:#e4e8ef;--card:#1b212b;--bd:#2d3542;--ac:#6b9bff;--g:#4cc58a;--r:#ef7b7a;--y:#e3b34f;--m:#8d97a8}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--bd)}
+header b{font-size:16px}
 nav{display:flex;gap:4px;padding:8px 12px;flex-wrap:wrap}
-nav button{background:none;border:1px solid var(--bd);color:var(--fg);padding:6px 12px;border-radius:6px;cursor:pointer}
-nav button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
-main{padding:12px 16px;max-width:1100px}
+nav button,.btn{background:var(--card);border:1px solid var(--bd);color:var(--fg);padding:6px 12px;border-radius:6px;cursor:pointer;font:inherit}
+nav button.on,.btn.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+.btn.d{border-color:var(--r);color:var(--r)}
+main{padding:8px 16px 40px;max-width:1150px}
 section{display:none}section.on{display:block}
+h2{font-size:16px;margin:14px 0 6px}h3{font-size:14px;margin:12px 0 4px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;margin:8px 0}
 table{border-collapse:collapse;width:100%;background:var(--card)}
-th,td{border:1px solid var(--bd);padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums}
-th:first-child,td:first-child{text-align:left}
+th,td{border:1px solid var(--bd);padding:4px 8px;text-align:left;vertical-align:top}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 .wrap{overflow-x:auto}
-label{display:block;margin:6px 0 2px;color:var(--m)}
-input,select,textarea{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:5px 8px;font:inherit}
-textarea{width:100%;height:220px;font-family:ui-monospace,monospace;box-sizing:border-box}
-.row{display:flex;gap:12px;flex-wrap:wrap}.row>div{flex:1;min-width:150px}
-.pos{color:var(--g)}.neg{color:var(--r)}.m{color:var(--m)}
-.drop{border:2px dashed var(--bd);padding:24px;text-align:center;border-radius:8px;margin:8px 0}
-button.p{background:var(--ac);color:#fff;border:0;padding:7px 14px;border-radius:6px;cursor:pointer;margin-top:8px}
-li{margin:4px 0;list-style:none}
+label{display:block;margin:6px 0 2px;color:var(--m);font-size:12px}
+input,select,textarea{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:5px 8px;font:inherit;max-width:100%}
+textarea{width:100%;min-height:110px;font-family:ui-monospace,monospace;font-size:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}.row>div{flex:1;min-width:130px}
+.m{color:var(--m)}.pos{color:var(--g)}.neg{color:var(--r)}.warn{color:var(--y)}
+.tag{display:inline-block;padding:0 7px;border-radius:10px;font-size:12px;border:1px solid var(--bd)}
+.tag.s{border-color:var(--g);color:var(--g)}.tag.n{border-color:var(--y);color:var(--y)}.tag.c{border-color:var(--r);color:var(--r)}
+.layers{display:grid;gap:6px}.layer{border:1px solid var(--bd);border-radius:8px;padding:8px 12px;background:var(--card)}
+.layer.agent{border-left:4px solid var(--ac)}.layer.orch{border-left:4px solid var(--y)}.layer.bot{border-left:4px solid var(--g)}.layer.exec{border-left:4px solid var(--m)}
+.mods{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}.mod{border:1px solid var(--bd);border-radius:6px;padding:2px 8px;font-size:13px}
+.kill{background:var(--r);color:#fff;border:0;padding:8px 16px;border-radius:6px;font-weight:700;cursor:pointer}
+.drop{border:2px dashed var(--bd);padding:18px;text-align:center;border-radius:8px}
+li{margin:3px 0}ul.c{list-style:none;padding:0}
+code{background:var(--bg);padding:1px 4px;border-radius:4px}
+.hash{font-family:ui-monospace,monospace;font-size:11px;color:var(--m);word-break:break-all}
 </style></head><body>
-<header>MIDAS v4 — trang quản lý</header>
+<header><b>MIDAS Control <span class="m" style="font-weight:400">— khung Agent (chưa có Agent thật)</span></b>
+<span><button class="btn" id="exp">Xuất trạng thái</button> <label class="btn" style="display:inline-block;margin:0">Nhập<input type="file" id="imp" accept=".json" hidden></label></span></header>
 <nav id="nav"></nav>
 <main>
-<section id="assets"><p class="m">Ảnh chụp 25/11/2026 trên Exness-MT5Trial6 (M5, ~30 ngày). "Số dư" = số dư tối thiểu để lot nhỏ nhất rủi ro không quá 1% / 2% với SL = 1,5 ATR.</p>
-<div class="wrap"><table id="at"></table></div></section>
 
-<section id="profile"><p class="m">Tạo file <code>profile_&lt;SYMBOL&gt;.ini</code> (chỉ khóa an toàn, giá trị bị chặn như trong EA). Đặt vào <code>%APPDATA%\MetaQuotes\Terminal\Common\Files\MIDAS\</code>.</p>
-<div class="row">
-<div><label>Symbol</label><input id="sym" value="XAUUSD"></div>
-<div><label>Preset</label><select id="pf"><option>GOLD<option>SILVER<option>FX<option>INDEX_US<option>INDEX_EU<option>OIL<option>CRYPTO</select></div>
-<div><label>Clock</label><select id="ck"><option>NY7<option>UTC<option>EU</select></div>
-<div><label>Session (a-b hoặc off)</label><input id="se" value="7-21"></div>
-<div><label>Blackout 1</label><input id="b1" value="16-18"></div>
-<div><label>Blackout 2</label><input id="b2" value="19-20"></div>
-<div><label>Asia / qua đêm</label><input id="as" value="0-7"></div>
-<div><label>Flat cuối tuần (0/1)</label><input id="wf" value="1"></div>
-<div><label>Giờ flat thứ Sáu</label><input id="wh" value="19"></div>
-<div><label>Max lệnh/ngày</label><input id="mt" value="3"></div>
-<div><label>Spread tối đa (×ATR)</label><input id="sa" value="0.25"></div>
-<div><label>Spread tối đa (% R)</label><input id="sr" value="15"></div>
-<div><label>SL tối đa (×ATR)</label><input id="ms" value="2.2"></div></div>
-<button class="p" id="gen">Tạo file</button> <button class="p" id="dl">Tải xuống</button>
-<textarea id="out" readonly></textarea></section>
+<section id="ov">
+<p class="m">Trang chạy hoàn toàn trong trình duyệt, lưu trạng thái ở máy bạn (nút Xuất/Nhập để sao lưu). Nó <b>chưa điều khiển EA</b>: mọi hành động chỉ tạo ra file hoặc bản ghi để Agent thật sau này đọc. Mỗi khối cho biết đã có gì và còn thiếu gì.</p>
+<h2>Kiến trúc 4 tầng</h2>
+<div class="layers">
+<div class="layer agent"><b>Tầng 4 — Agent (supervisor)</b> <span class="m">chỉ quan sát, phân tích, quyết định; không đặt lệnh</span>
+<div class="mods" id="mods"></div></div>
+<div class="layer orch"><b>Tầng 3 — Orchestration</b> <span class="m">Bot Manager · Capital Allocator · Risk Manager tổng hợp</span>
+<div class="mods"><span class="mod">Risk Manager: <span class="pos">có trong EA v4</span> (trần rủi ro mở theo magic)</span><span class="mod">Bot Manager: <span class="warn">file profile + status</span></span><span class="mod">Capital Allocator: <span class="neg">chưa có</span></span></div></div>
+<div class="layer bot"><b>Tầng 2 — Strategy / Bot Instance</b> <span class="m">mỗi bot = 1 chart M5 + 1 magic + 1 profile</span><div class="mods"><span class="mod">EA MIDAS v4 <span class="pos">đã có</span></span></div></div>
+<div class="layer exec"><b>Tầng 1 — Execution &amp; Data</b> <span class="m">MT5, broker Exness, nhật ký CSV</span></div></div>
+<h2>Mức tự chủ</h2>
+<div class="card"><div class="row"><div><label>Mức hiện tại cho phép</label><select id="lvl"></select></div><div id="lvlinfo" class="m"></div></div></div>
+<h2>Lộ trình</h2><div class="card"><ul class="c" id="road"></ul></div>
+<h2>Công tắc dừng khẩn cấp</h2>
+<div class="card"><p class="m">Tạo file <code>MIDAS\KILL.txt</code> trong Common\Files. <b>EA v4 hiện chưa đọc file này</b>, nên đây mới là thiết kế; muốn dừng thật hãy tắt Algo Trading trong MT5.</p>
+<button class="kill" id="kill">Tạo nội dung KILL</button> <textarea id="killout" readonly style="min-height:60px"></textarea></div>
+</section>
 
-<section id="journal"><div class="drop" id="drop">Kéo thả <b>journal_*.csv</b> vào đây hoặc chọn file: <input type="file" id="f" multiple accept=".csv"></div>
-<div id="jr" class="wrap"></div></section>
+<section id="bots">
+<p class="m">Hướng C của tài liệu: mỗi cặp (symbol + profile) là một bot. Magic phải nằm trong 580000–589999 để Risk Manager tính rủi ro.</p>
+<div class="wrap"><table id="bt"></table></div>
+<div class="row card"><div><label>Symbol</label><input id="bs"></div><div><label>Profile</label><select id="bp"><option>GOLD<option>SILVER<option>FX<option>INDEX_US<option>INDEX_EU<option>OIL<option>CRYPTO</select></div><div><label>Magic</label><input id="bm" type="number" value="580010"></div><div><label>Vốn cấp (%)</label><input id="bc" type="number" value="25"></div><div><label>Trạng thái</label><select id="bst"><option>shadow<option>live<option>paused</select></div><button class="btn p" id="badd">Thêm bot</button></div>
+<p id="bchk" class="m"></p>
+</section>
 
-<section id="bt"><p class="m">Backtest cần chạy (tick thực, M5, ký quỹ $5.000). Trạng thái lưu trong trình duyệt.</p><ul id="bl"></ul></section>
+<section id="rg">
+<p class="m">Regime Detector kiểu rule-based (đầu vào quan trọng nhất của Agent). Có trễ chống nhảy cóc (hysteresis) và nhãn kèm độ tin cậy. Dán chuỗi mẫu để thử; sau này Agent tính từ dữ liệu MT5.</p>
+<div class="row"><div><label>Nhóm tài sản</label><select id="rgrp"></select></div><div><label>Số mẫu liên tiếp để đổi regime</label><input id="rn" type="number" value="3"></div></div>
+<h3>Ngưỡng theo nhóm (sửa được)</h3><div class="wrap"><table id="rth"></table></div>
+<h3>Chuỗi mẫu: mỗi dòng <code>adx, atr_ratio, above_ma200(1/0)</code></h3>
+<textarea id="rin">18,0.7,1
+19,0.8,1
+27,1.1,1
+29,1.2,1
+31,1.3,1
+30,1.6,1
+28,1.7,1
+26,1.8,0
+15,2.8,0
+14,2.9,0
+13,2.7,0</textarea><button class="btn p" id="rrun">Chạy</button><div class="wrap" id="rout"></div>
+</section>
+
+<section id="pf">
+<p class="m">Performance Analyzer: kéo thả nhật ký <code>journal_*.csv</code> do EA v4 ghi. Bảng "Regime × Config → Hiệu suất" là thứ Experience Store lưu.</p>
+<div class="drop" id="drop">Kéo thả CSV vào đây hoặc <input type="file" id="f" multiple accept=".csv"></div>
+<div class="row"><div><label>Cảnh báo nếu kỳ vọng R của N lệnh gần nhất thấp hơn trước đó quá</label><input id="pwr" type="number" value="0.3" step="0.1"></div><div><label>N lệnh gần nhất</label><input id="pn" type="number" value="20"></div></div>
+<div id="pout"></div>
+</section>
+
+<section id="ex">
+<p class="m">Experience Store: "trong điều kiện X, dùng config Y thì kết quả Z". Kinh nghiệm cũ bị giảm trọng số theo thời gian (nửa đời bên dưới).</p>
+<div class="row card"><div><label>Từ</label><input id="xf" type="date"></div><div><label>Đến</label><input id="xt" type="date"></div><div><label>Asset</label><input id="xa" placeholder="XAUUSD"></div><div><label>Regime</label><input id="xr" placeholder="TREND_UP"></div><div><label>Tin cậy 0–1</label><input id="xc" type="number" step="0.05" value="0.7"></div></div>
+<div class="row card"><div><label>Config / profile</label><input id="xg" placeholder="GOLD default"></div><div><label>Kỳ vọng R</label><input id="xe" type="number" step="0.01"></div><div><label>Số lệnh</label><input id="xn" type="number"></div><div><label>Max DD (R)</label><input id="xd" type="number" step="0.1"></div><div style="flex:3"><label>Bối cảnh / kết luận</label><input id="xk"></div><button class="btn p" id="xadd">Lưu</button></div>
+<div class="row"><div><label>Nửa đời trọng số (ngày)</label><input id="xh" type="number" value="90"></div><div><label>Truy vấn regime</label><input id="xq" placeholder="TREND_UP"></div></div>
+<div class="wrap" id="xout"></div>
+</section>
+
+<section id="dc">
+<p class="m">Decision Engine: 6 loại quyết định được phép. Mọi đề xuất phải có lý do, đi qua Parameter Manager, rồi vào nhật ký bất biến (chuỗi băm SHA-256, sửa một dòng thì các dòng sau hỏng).</p>
+<div class="card"><h3>Luồng 1 chu kỳ</h3><ol><li>Thu thập trạng thái bot + dữ liệu</li><li>Regime Detector</li><li>Performance Analyzer theo regime</li><li>Truy vấn Experience Store</li><li>Decision Engine tổng hợp, kèm lý do</li><li>Parameter Manager kiểm tra, từ chối hoặc điều chỉnh</li><li>Gửi Orchestration; ghi log, cập nhật Experience</li></ol></div>
+<div class="row card"><div><label>Bot (symbol)</label><input id="ds" placeholder="XAUUSD"></div><div><label>Loại</label><select id="dt"><option value="hold">Giữ nguyên<option value="switch">Chuyển profile<option value="tune">Chỉnh nhẹ tham số an toàn<option value="derisk">Giảm vốn (de-risk)<option value="pause">Tạm dừng bot<option value="alert">Cảnh báo người vận hành</select></div><div><label>Tham số (tune)</label><select id="dp"></select></div><div><label>Giá trị hiện tại</label><input id="dcur" type="number" step="any"></div><div><label>Đề xuất</label><input id="dnew" type="number" step="any"></div><div style="flex:3"><label>Lý do (bắt buộc)</label><input id="dr"></div><button class="btn p" id="dgo">Đề xuất</button></div>
+<div id="dres"></div>
+<h3>Nhật ký quyết định</h3><div class="wrap" id="dlog"></div>
+</section>
+
+<section id="pm">
+<p class="m">Parameter Manager: lớp kiểm soát cuối. <b>Kênh</b> cho biết tham số đổi được bằng cách nào ngay hôm nay. "Chưa có" nghĩa là EA v4 chưa có cổng đọc tham số đó, cần xây thêm trước khi Agent được đổi.</p>
+<div class="wrap"><table id="ptab"></table></div>
+<h3>Tạo file profile (kênh đang chạy)</h3>
+<div class="row"><div><label>Symbol</label><input id="sym" value="XAUUSD"></div><div><label>Preset</label><select id="ppf"><option>GOLD<option>SILVER<option>FX<option>INDEX_US<option>INDEX_EU<option>OIL<option>CRYPTO</select></div><div><label>Clock</label><select id="ck"><option>NY7<option>UTC<option>EU</select></div><div><label>Session</label><input id="se" value="7-21"></div><div><label>Blackout 1</label><input id="b1" value="16-18"></div><div><label>Blackout 2</label><input id="b2" value="19-20"></div><div><label>Asia</label><input id="as" value="0-7"></div><div><label>Flat T6 (0/1)</label><input id="wf" value="1"></div><div><label>Giờ flat</label><input id="wh" value="19"></div><div><label>Lệnh/ngày</label><input id="mt" value="3"></div><div><label>Spread ×ATR</label><input id="sa" value="0.25"></div><div><label>Spread %R</label><input id="sr" value="15"></div><div><label>SL ×ATR</label><input id="ms" value="2.2"></div></div>
+<button class="btn p" id="gen">Tạo</button> <button class="btn" id="dl">Tải xuống</button><textarea id="out" readonly></textarea>
+</section>
+
+<section id="rk">
+<h2>Giới hạn cứng</h2>
+<div class="row card"><div><label>Tổng rủi ro mở tối đa (% số dư)</label><input id="k1" type="number" value="4" step="0.5"></div><div><label>Số vị thế/lệnh chờ tối đa</label><input id="k2" type="number" value="4"></div><div><label>Drawdown tối đa toàn hệ thống (%)</label><input id="k3" type="number" value="20"></div><div><label>Số lần đổi config tối đa / ngày</label><input id="k4" type="number" value="2"></div><div><label>Lỗ ngày (%)</label><input id="k5" type="number" value="6" step="0.5"></div></div>
+<p class="m">Hai ô đầu trùng với <code>InpMaxOpenRiskPct</code> và <code>InpMaxOpenPositions</code> của EA; lỗ ngày trùng <code>InpDailyLossPct</code>. Hai ô còn lại (DD hệ thống, số lần đổi config) chưa có nơi thực thi.</p>
+<h2>Lớp bảo vệ bắt buộc</h2><div class="card"><ul class="c" id="guard"></ul></div>
+<h2>Circuit breaker (thiết kế)</h2><div class="card"><ul>
+<li>Lỗ đột biến vượt ngưỡng lỗ ngày → EA đã tự đóng và chặn trong ngày.</li>
+<li>Mất kết nối broker / dữ liệu lỗi → chưa có; Agent phải phát hiện qua file <code>status_*.ini</code> không cập nhật quá 30 phút.</li>
+<li>Rollback tự động: nếu hiệu suất sau đổi config giảm quá ngưỡng trong N lệnh → quay lại profile trước (lưu trong nhật ký quyết định).</li></ul></div>
+</section>
+
+<section id="as">
+<h2>Tài sản đã quét</h2><div class="wrap"><table id="at"></table></div>
+<h2>Backtest cần chạy</h2><ul class="c" id="bl"></ul>
+</section>
 </main>
 <script>
-const $=s=>document.querySelector(s);
-const tabs=[["assets","Tài sản"],["profile","Profile"],["journal","Nhật ký lệnh"],["bt","Backtest"]];
-tabs.forEach(([id,n])=>{const b=document.createElement("button");b.textContent=n;b.onclick=()=>show(id);b.dataset.id=id;$("#nav").append(b)});
-function show(id){document.querySelectorAll("section").forEach(s=>s.classList.toggle("on",s.id==id));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.id==id))}
-show("assets");
-fetch("assets.json").then(r=>r.json()).then(d=>{
- $("#at").innerHTML="<tr><th>Symbol<th>Vai trò<th>Giá<th>ATR M5 (bp)<th>Spread/ATR<th>Lot min<th>Rủi ro lot min ($)<th>Số dư 1%<th>Số dư 2%</tr>"+d.map(r=>`<tr><td>${r.symbol}<td>${r.role||"<span class=m>loại</span>"}<td>${r.price}<td>${r.atr_bp}<td>${r.spread_over_atr}<td>${r.min_lot}<td>${r["usd_risk_at_min_lot_sl_1.5atr"]}<td>${r.min_balance_for_1pct}<td>${r.min_balance_for_2pct}</tr>`).join("")
-}).catch(()=>{$("#at").innerHTML="<tr><td>Không tải được assets.json</tr>"});
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+let S={bots:[{symbol:"XAUUSD",profile:"GOLD",magic:580001,cap:30,state:"shadow"},{symbol:"USTEC",profile:"INDEX_US",magic:580003,cap:30,state:"shadow"},{symbol:"BTCUSD",profile:"CRYPTO",magic:580008,cap:20,state:"shadow"}],
+ lvl:1,road:{},exp:[],log:[],bt:{},guard:{},rth:null,k:{}};
+try{Object.assign(S,JSON.parse(localStorage.getItem("midas")||"{}"))}catch(e){}
+const save=()=>{try{localStorage.setItem("midas",JSON.stringify(S))}catch(e){}};
+const tabs=[["ov","Tổng quan"],["bots","Bot"],["rg","Regime"],["pf","Hiệu suất"],["ex","Kinh nghiệm"],["dc","Quyết định"],["pm","Tham số"],["rk","Rủi ro"],["as","Tài sản & Backtest"]];
+tabs.forEach(([id,n])=>{const b=document.createElement("button");b.textContent=n;b.dataset.id=id;b.onclick=()=>show(id);$("#nav").append(b)});
+function show(id){$$("section").forEach(s=>s.classList.toggle("on",s.id==id));$$("nav button").forEach(b=>b.classList.toggle("on",b.dataset.id==id));location.hash=id}
+show((location.hash||"#ov").slice(1)||"ov");
+$("#exp").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)]));a.download="midas_control_state.json";a.click()};
+$("#imp").onchange=async e=>{try{S=Object.assign(S,JSON.parse(await e.target.files[0].text()));save();location.reload()}catch(x){alert("File không hợp lệ")}};
+
+/* ---- overview ---- */
+const MODS=[["Regime Detector","Skeleton","Quy tắc ADX/ATR có hysteresis (tab Regime); bản Python ở Agent/"],["Performance Analyzer","Skeleton","Đọc journal CSV theo regime (tab Hiệu suất); Agent/performance_analyzer.py"],["Experience Store","Skeleton","Lưu cục bộ + trọng số thời gian (tab Kinh nghiệm)"],["Decision Engine","Skeleton","6 loại quyết định, bắt buộc có lý do (tab Quyết định)"],["Parameter Manager","Skeleton","Bộ kiểm tra Safe/Sensitive/Critical, cooldown, giới hạn biên độ"]];
+$("#mods").innerHTML=MODS.map(m=>`<span class="mod" title="${m[2]}">${m[0]}: <span class="${m[1]=="Live"?"pos":"warn"}">${m[1]}</span></span>`).join("");
+const LV=[["Mức 1","Tự chỉnh tham số trong biên độ an toàn","Cao","Thấp–TB"],["Mức 2","Tự chọn/chuyển profile theo asset + regime","Cao","TB"],["Mức 3","Tự học từ Experience Store","TB–Cao","TB"],["Mức 4","Đề xuất đổi logic engine (có review)","TB","Cao"],["Mức 5","Tự sửa và deploy engine","Thấp","Rất cao — không khuyến nghị"]];
+$("#lvl").innerHTML=`<option value="0">Mức 0 — chỉ quan sát (giai đoạn 1)</option>`+LV.map((l,i)=>`<option value="${i+1}" ${i>2?"disabled":""}>${l[0]} — ${l[1]}${i>2?" (khóa)":""}</option>`).join("");
+$("#lvl").value=S.lvl;
+function lvi(){const l=+$("#lvl").value;$("#lvlinfo").textContent=l==0?"Agent chỉ ghi và cảnh báo, không đổi gì.":`Khả thi ${LV[l-1][2]}, rủi ro ${LV[l-1][3]}. ${l>=2?"Cần cooldown + rollback + chạy shadow trước khi nhận vốn thật.":""}`}
+$("#lvl").onchange=()=>{S.lvl=+$("#lvl").value;save();lvi()};lvi();
+const RD=["Giai đoạn 1 — Nền tảng quan sát: bot chạy ổn định + logging đầy đủ (EA v4 có journal/status; còn cần chạy demo đủ dài)","Giai đoạn 2 — Orchestration cơ bản: Bot Manager, Capital Allocator, Risk Manager (Risk Manager đã có; Allocator chưa)","Giai đoạn 3 — Agent có kiểm soát: ghép 4 module, chuyển profile, cooldown + rollback","Giai đoạn 4 — Học từ kinh nghiệm: Experience Store dày, dùng khi ra quyết định"];
+$("#road").innerHTML=RD.map((t,i)=>`<li><label style="color:inherit;font-size:14px"><input type=checkbox data-i=${i} ${S.road[i]?"checked":""}> ${t}</label></li>`).join("");
+$("#road").onchange=e=>{S.road[e.target.dataset.i]=e.target.checked;save()};
+$("#kill").onclick=()=>{$("#killout").value=`KILL\nrequested_utc=${new Date().toISOString()}\nreason=manual\n`};
+
+/* ---- bots ---- */
+function rbots(){$("#bt").innerHTML="<tr><th>Symbol<th>Profile<th class=n>Magic<th class=n>Vốn %<th>Trạng thái<th></tr>"+S.bots.map((b,i)=>`<tr><td>${b.symbol}<td>${b.profile}<td class=n>${b.magic}<td class=n>${b.cap}<td><select data-i=${i} class=bs>${["shadow","live","paused"].map(x=>`<option ${x==b.state?"selected":""}>${x}`).join("")}</select><td><button class="btn d" data-d=${i}>Xóa</button></tr>`).join("");
+ const tot=S.bots.filter(b=>b.state!="paused").reduce((a,b)=>a+ +b.cap,0),mg=S.bots.map(b=>b.magic),dup=mg.length!=new Set(mg).size,out=S.bots.some(b=>b.magic<580000||b.magic>589999);
+ $("#bchk").innerHTML=`Tổng vốn cấp (bot không paused): <b class="${tot>100?"neg":""}">${tot}%</b>${tot>100?" — vượt 100%":""}${dup?' · <span class="neg">trùng magic</span>':""}${out?' · <span class="neg">có magic ngoài 580000–589999</span>':""}`}
+$("#bt").onchange=e=>{if(e.target.classList.contains("bs")){S.bots[e.target.dataset.i].state=e.target.value;save();rbots()}};
+$("#bt").onclick=e=>{if(e.target.dataset.d!=null){S.bots.splice(+e.target.dataset.d,1);save();rbots()}};
+$("#badd").onclick=()=>{if(!$("#bs").value)return;S.bots.push({symbol:$("#bs").value.toUpperCase(),profile:$("#bp").value,magic:+$("#bm").value,cap:+$("#bc").value,state:$("#bst").value});save();rbots()};rbots();
+
+/* ---- regime ---- */
+const GR={"Vàng / kim loại":[25,20,1.5,2.5,0.8],"Chỉ số":[25,20,1.5,2.5,0.8],"Crypto":[28,22,1.8,3,0.7],"Forex major":[22,18,1.4,2.2,0.8],"Dầu":[25,20,1.6,2.6,0.8]};
+if(!S.rth)S.rth=GR;
+$("#rgrp").innerHTML=Object.keys(GR).map(k=>`<option>${k}`).join("");
+function rth(){const g=$("#rgrp").value,t=S.rth[g];$("#rth").innerHTML="<tr><th>ADX trend<th>ADX range<th>ATR ratio cao<th>ATR ratio khủng hoảng<th>ATR ratio thấp</tr><tr>"+t.map((v,i)=>`<td><input type=number step=0.1 value=${v} data-i=${i} style="width:80px">`).join("")+"</tr>"}
+$("#rgrp").onchange=rth;rth();
+$("#rth").onchange=e=>{S.rth[$("#rgrp").value][+e.target.dataset.i]=+e.target.value;save()};
+function lab(adx,atr,up,t){const[ta,ra,hv,cr,lv]=t;let l,c;
+ if(atr>=cr){l="CRISIS";c=Math.min(1,.6+(atr-cr)/cr)}
+ else if(atr>=hv){l="HIGH_VOL";c=Math.min(1,.5+(atr-hv)/(cr-hv)*.5)}
+ else if(adx>=ta){l=up?"TREND_UP":"TREND_DOWN";c=Math.min(1,.5+(adx-ta)/20)}
+ else if(adx<ra&&atr<=lv){l="LOW_VOL_RANGE";c=Math.min(1,.5+(ra-adx)/20)}
+ else if(adx<ra){l="RANGE";c=Math.min(1,.5+(ra-adx)/20)}else{l="TRANSITION";c=.4}
+ return[l,c]}
+$("#rrun").onclick=()=>{const t=S.rth[$("#rgrp").value],n=Math.max(1,+$("#rn").value);let cur=null,cand=null,cnt=0,h="<table><tr><th class=n>#<th>Thô<th class=n>Tin cậy<th>Regime hiện hành<th>Ghi chú</tr>";
+ $("#rin").value.trim().split(/\n/).forEach((ln,i)=>{const[a,b,c]=ln.split(",").map(Number);const[l,cf]=lab(a,b,c==1,t);let note="";
+  if(cur===null){cur=l;note="khởi tạo"}else if(l!==cur){if(l===cand)cnt++;else{cand=l;cnt=1}if(cnt>=n){note=`đổi ${cur} → ${l}`;cur=l;cand=null;cnt=0}else note=`đang chờ ${l} (${cnt}/${n})`}else{cand=null;cnt=0}
+  h+=`<tr><td class=n>${i+1}<td>${l}<td class=n>${cf.toFixed(2)}<td><b>${cur}</b><td class=m>${note}</tr>`});$("#rout").innerHTML=h+"</table>"};
+
+/* ---- performance ---- */
+function st(r){const n=r.length;let w=0,gp=0,gl=0,t=0;r.forEach(x=>{if(x.pnl_r>0)w++;t+=x.pnl_r;if(x.pnl>0)gp+=x.pnl;else gl-=x.pnl});return{n,wr:w/n*100,exp:t/n,tot:t,pf:gl>0?gp/gl:Infinity}}
+function grp(rows,f){const g={};rows.forEach(r=>{(g[f(r)]=g[f(r)]||[]).push(r)});return Object.keys(g).sort().map(k=>[k,g[k]])}
+function tb(t,g){return `<h3>${t}</h3><div class=wrap><table><tr><th>Nhóm<th class=n>Lệnh<th class=n>Thắng %<th class=n>Kỳ vọng R<th class=n>Tổng R<th class=n>PF</tr>`+g.map(([k,r])=>{const s=st(r);return `<tr><td>${k}<td class=n>${s.n}<td class=n>${s.wr.toFixed(1)}<td class="n ${s.exp>=0?"pos":"neg"}">${s.exp.toFixed(2)}<td class=n>${s.tot.toFixed(1)}<td class=n>${isFinite(s.pf)?s.pf.toFixed(2):"∞"}</tr>`}).join("")+"</table></div>"}
+function parse(x){const L=x.trim().split(/\r?\n/),h=L.shift().split(",");return L.map(l=>{const c=l.split(","),o={};h.forEach((k,i)=>o[k]=c[i]);o.pnl_r=+o.pnl_r;o.pnl=+o.pnl_money;return o})}
+async function load(fs){let rows=[];for(const f of fs)rows=rows.concat(parse(await f.text()));if(!rows.length){$("#pout").textContent="Trống";return}
+ rows.sort((a,b)=>a.close_utc<b.close_utc?-1:1);window.ROWS=rows;
+ let h=tb("Tất cả",[["ALL",rows]])+tb("Regime biến động × symbol",grp(rows,r=>r.symbol+" / "+r.vol_regime))+tb("Quan hệ HTF",grp(rows,r=>r.symbol+" / "+r.trend_regime))+tb("Setup",grp(rows,r=>r.tag.split("|").pop()))+tb("Giờ trên clock profile",grp(rows,r=>r.symbol+" "+r.clock_hour.padStart(2,"0")+"h"))+tb("Cách thoát",grp(rows,r=>r.exit+(r.tp1=="1"?" +TP1":"")));
+ const N=+$("#pn").value,thr=+$("#pwr").value;let al="";grp(rows,r=>r.symbol).forEach(([k,r])=>{if(r.length<N*2)return;const rec=st(r.slice(-N)),old=st(r.slice(0,-N));if(old.exp-rec.exp>thr)al+=`<li class=neg>${k}: kỳ vọng ${N} lệnh gần nhất ${rec.exp.toFixed(2)}R so với ${old.exp.toFixed(2)}R trước đó. Đánh dấu cần review.</li>`});
+ $("#pout").innerHTML=`<h3>Cảnh báo suy giảm</h3><ul>${al||"<li class=m>Không có (hoặc chưa đủ lệnh: cần ít nhất 2N lệnh mỗi symbol)</li>"}</ul>`+h}
+$("#f").onchange=e=>load(e.target.files);$("#drop").ondragover=e=>e.preventDefault();$("#drop").ondrop=e=>{e.preventDefault();load(e.dataTransfer.files)};
+
+/* ---- experience ---- */
+function rex(){const q=$("#xq").value.trim().toUpperCase(),hl=+$("#xh").value||90,now=Date.now();
+ const rows=S.exp.filter(x=>!q||x.regime.toUpperCase()==q).map(x=>({...x,w:Math.pow(.5,(now-new Date(x.to).getTime())/864e5/hl)*x.conf}));rows.sort((a,b)=>b.w-a.w);
+ $("#xout").innerHTML="<table><tr><th>Kỳ<th>Asset<th>Regime (tin cậy)<th>Config<th class=n>Kỳ vọng R<th class=n>Lệnh<th class=n>DD R<th class=n>Trọng số<th>Kết luận<th></tr>"+(rows.map(x=>`<tr><td>${x.from}→${x.to}<td>${x.asset}<td>${x.regime} (${x.conf})<td>${x.cfg}<td class=n>${x.e}<td class=n>${x.n}<td class=n>${x.dd}<td class=n>${x.w.toFixed(2)}<td>${x.note}<td><button class="btn d" data-d=${S.exp.indexOf(S.exp.find(y=>y.id==x.id))}>Xóa</button></tr>`).join("")||"<tr><td colspan=10 class=m>Chưa có kinh nghiệm nào.</tr>")+"</table>"}
+$("#xadd").onclick=()=>{S.exp.push({id:Date.now(),from:$("#xf").value,to:$("#xt").value||new Date().toISOString().slice(0,10),asset:$("#xa").value.toUpperCase(),regime:$("#xr").value.toUpperCase(),conf:+$("#xc").value,cfg:$("#xg").value,e:+$("#xe").value,n:+$("#xn").value,dd:+$("#xd").value,note:$("#xk").value});save();rex()};
+$("#xout").onclick=e=>{if(e.target.dataset.d!=null){S.exp.splice(+e.target.dataset.d,1);save();rex()}};$("#xq").oninput=rex;$("#xh").oninput=rex;rex();
+
+/* ---- parameter classes ---- */
+const PR=[
+["InpGrabMinPokeATR","Safe",20,24,"EA input","chưa có"],["InpMinFVGATR","Safe",20,24,"EA input","chưa có"],["InpEqTolATR","Safe",20,24,"EA input","chưa có"],
+["max_trades_day","Safe",50,24,"profile file","đang chạy"],["session / blackout / asia","Safe",0,24,"profile file","đang chạy"],["max_spread_atr","Sensitive",10,48,"profile file","đang chạy"],["max_spread_r_pct","Sensitive",10,48,"profile file","đang chạy"],["max_sl_atr","Sensitive",10,48,"profile file","đang chạy"],
+["InpSLBufferATR","Sensitive",10,48,"EA input","chưa có"],["InpMinTP1_R","Sensitive",10,48,"EA input","chưa có"],["InpZoneEntryFrac","Sensitive",10,48,"EA input","chưa có"],["InpBE_LockATR","Sensitive",10,48,"EA input","chưa có"],
+["InpBaseRiskPct / InpMaxRiskPct","Critical",0,0,"EA input","không bao giờ qua Agent"],["InpCapitalFloorDD / InpDailyLossPct","Critical",0,0,"EA input","không bao giờ qua Agent"],["InpMagic / engine logic","Critical",0,0,"mã nguồn","cần người duyệt"]];
+$("#ptab").innerHTML="<tr><th>Tham số<th>Lớp<th class=n>Biên độ/lần %<th class=n>Cooldown (giờ)<th>Kênh<th>Cổng hôm nay</tr>"+PR.map(p=>`<tr><td><code>${p[0]}</code><td><span class="tag ${p[1][0].toLowerCase()}">${p[1]}</span><td class=n>${p[2]||"—"}<td class=n>${p[3]||"—"}<td>${p[4]}<td class="${p[5]=="đang chạy"?"pos":p[5]=="chưa có"?"warn":"neg"}">${p[5]}</tr>`).join("");
+$("#dp").innerHTML=PR.filter(p=>p[1]!="Critical"&&p[5]=="đang chạy"||p[0].startsWith("Inp")&&p[1]!="Critical").map(p=>`<option>${p[0]}`).join("");
 const P={GOLD:["NY7","7-21","16-18","19-20","0-7",1,19],SILVER:["NY7","7-21","16-18","19-20","0-7",1,19],FX:["NY7","7-21","16-18","19-20","0-7",1,19],INDEX_US:["NY7","16-23","off","off","0-16",1,22],INDEX_EU:["EU","9-17","14-15","off","0-9",1,16],OIL:["NY7","15-22","17-18","off","0-15",1,22],CRYPTO:["UTC","off","off","off","0-7",0,19]};
-$("#pf").onchange=()=>{const p=P[$("#pf").value];["ck","se","b1","b2","as","wf","wh"].forEach((k,i)=>$("#"+k).value=p[i]);gen()};
+$("#ppf").onchange=()=>{const p=P[$("#ppf").value];["ck","se","b1","b2","as","wf","wh"].forEach((k,i)=>$("#"+k).value=p[i]);gen()};
 const cl=(v,a,b)=>Math.min(b,Math.max(a,+v||a));
-function gen(){const o=["# generated by MIDAS Control","profile="+$("#pf").value,"clock="+$("#ck").value,
- "session="+$("#se").value,"blackout1="+$("#b1").value,"blackout2="+$("#b2").value,"asia="+$("#as").value,
- "weekend_flat="+($("#wf").value=="0"?0:1),"weekend_flat_hour="+cl($("#wh").value,0,23),"max_trades_day="+cl($("#mt").value,1,20),
- "max_spread_atr="+cl($("#sa").value,.05,1),"max_spread_r_pct="+cl($("#sr").value,3,50),"max_sl_atr="+cl($("#ms").value,.8,4)];
- $("#out").value=o.join("\n")+"\n"}
-$("#gen").onclick=gen;gen();
-$("#dl").onclick=()=>{gen();const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([$("#out").value]));a.download="profile_"+$("#sym").value.toUpperCase()+".ini";a.click()};
-function st(rs){const n=rs.length;let w=0,gp=0,gl=0,t=0;rs.forEach(r=>{if(r.pnl_r>0)w++;t+=r.pnl_r;if(r.pnl>0)gp+=r.pnl;else gl-=r.pnl});return{n,wr:w/n*100,exp:t/n,tot:t,pf:gl>0?gp/gl:Infinity}}
-function grp(rows,f){const g={};rows.forEach(r=>{(g[f(r)]=g[f(r)]||[]).push(r)});return Object.keys(g).sort().map(k=>[k,st(g[k])])}
-function tbl(t,g){return `<h3>${t}</h3><table><tr><th>Nhóm<th>Lệnh<th>Thắng %<th>Kỳ vọng R<th>Tổng R<th>PF</tr>`+g.map(([k,s])=>`<tr><td>${k}<td>${s.n}<td>${s.wr.toFixed(1)}<td class="${s.exp>=0?"pos":"neg"}">${s.exp.toFixed(2)}<td>${s.tot.toFixed(1)}<td>${isFinite(s.pf)?s.pf.toFixed(2):"∞"}</tr>`).join("")+"</table>"}
-function parse(txt){const L=txt.trim().split(/\r?\n/);const h=L.shift().split(",");return L.map(l=>{const c=l.split(","),o={};h.forEach((k,i)=>o[k]=c[i]);o.pnl_r=+o.pnl_r;o.pnl=+o.pnl_money;return o})}
-async function load(files){let rows=[];for(const f of files)rows=rows.concat(parse(await f.text()));
- if(!rows.length){$("#jr").textContent="Trống";return}
- $("#jr").innerHTML=tbl("Tất cả",[["ALL",st(rows)]])+tbl("Theo symbol",grp(rows,r=>r.symbol))+tbl("Theo setup",grp(rows,r=>r.tag.split("|").pop()))+tbl("Theo regime biến động",grp(rows,r=>r.vol_regime))+tbl("Theo quan hệ HTF",grp(rows,r=>r.trend_regime))+tbl("Theo giờ (clock profile)",grp(rows,r=>r.clock_hour.padStart(2,"0")+"h"))+tbl("Theo cách thoát",grp(rows,r=>r.exit+(r.tp1=="1"?" +TP1":"")))}
-$("#f").onchange=e=>load(e.target.files);
-$("#drop").ondragover=e=>e.preventDefault();$("#drop").ondrop=e=>{e.preventDefault();load(e.dataTransfer.files)};
-const T=["V4 vàng 03–11/2026 (cơ sở)","v3.4 LEGACY vàng cùng kỳ","v3.4 V3 vàng cùng kỳ","V4 USTEC 03–11/2026","V4 BTCUSD 03–11/2026","V4 DE30 / USOIL / XAGUSD","V4 EURUSD / USDJPY (kỳ vọng nhiều lệnh bị từ chối vì spread/R)","Vàng: blackout bật/tắt (so journal theo giờ)","Chỉ số: blackout mở cửa bật/tắt","Walk-forward: tách đôi kỳ, so kỳ vọng R"];
-let S={};try{S=JSON.parse(localStorage.getItem("mt")||"{}")}catch(x){}
-$("#bl").innerHTML=T.map((t,i)=>`<li><label><input type=checkbox data-i=${i} ${S[i]?"checked":""}> ${t}</label></li>`).join("");
-$("#bl").onchange=e=>{S[e.target.dataset.i]=e.target.checked;try{localStorage.setItem("mt",JSON.stringify(S))}catch(x){}};
+function gen(){$("#out").value=["# generated by MIDAS Control","profile="+$("#ppf").value,"clock="+$("#ck").value,"session="+$("#se").value,"blackout1="+$("#b1").value,"blackout2="+$("#b2").value,"asia="+$("#as").value,"weekend_flat="+($("#wf").value=="0"?0:1),"weekend_flat_hour="+cl($("#wh").value,0,23),"max_trades_day="+cl($("#mt").value,1,20),"max_spread_atr="+cl($("#sa").value,.05,1),"max_spread_r_pct="+cl($("#sr").value,3,50),"max_sl_atr="+cl($("#ms").value,.8,4)].join("\n")+"\n"}
+$("#gen").onclick=gen;gen();$("#dl").onclick=()=>{gen();const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([$("#out").value]));a.download="profile_"+$("#sym").value.toUpperCase()+".ini";a.click()};
+
+/* ---- decisions ---- */
+async function sha(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+function validate(d){const p=PR.find(x=>x[0]==d.param),r={ok:true,msgs:[],val:d.new};
+ if(d.type=="hold"||d.type=="alert")return r;
+ if(d.type=="tune"){if(!p){r.ok=false;r.msgs.push("tham số không tồn tại");return r}
+  if(p[1]=="Critical"){r.ok=false;r.msgs.push("Critical: Agent không được tự đổi, cần người duyệt");return r}
+  if(!d.cur){r.ok=false;r.msgs.push("thiếu giá trị hiện tại");return r}
+  const ch=Math.abs(d.new-d.cur)/Math.abs(d.cur)*100;if(ch>p[2]){const s=Math.sign(d.new-d.cur);r.val=+(d.cur*(1+s*p[2]/100)).toFixed(4);r.msgs.push(`đổi ${ch.toFixed(0)}% vượt biên độ ${p[2]}% → hạ về ${r.val}`)}
+  const last=S.log.filter(x=>x.bot==d.bot&&x.type=="tune"&&x.param==d.param&&x.status!="rejected").pop();if(last&&(Date.now()-last.t)/36e5<p[3]){r.ok=false;r.msgs.push(`cooldown ${p[3]}h chưa hết (lần trước ${new Date(last.t).toLocaleString()})`)}
+  if(p[5]!="đang chạy")r.msgs.push("cổng thực thi chưa có: quyết định chỉ được ghi, chưa áp dụng được")}
+ const day=S.log.filter(x=>x.status!="rejected"&&x.type!="hold"&&x.type!="alert"&&Date.now()-x.t<864e5).length,lim=+(S.k.k4||2);if(day>=lim){r.ok=false;r.msgs.push(`đã đổi ${day} lần trong 24h (giới hạn ${lim})`)}
+ if(S.lvl==0&&d.type!="hold"&&d.type!="alert"){r.ok=false;r.msgs.push("đang ở Mức 0 (chỉ quan sát)")}
+ return r}
+$("#dgo").onclick=async()=>{const d={t:Date.now(),bot:$("#ds").value.toUpperCase()||"-",type:$("#dt").value,param:$("#dp").value,cur:+$("#dcur").value,new:+$("#dnew").value,reason:$("#dr").value.trim()};
+ if(!d.reason){$("#dres").innerHTML='<p class=neg>Thiếu lý do — Decision Engine không được ra quyết định không giải thích.</p>';return}
+ const v=validate(d);d.status=v.ok?(v.val!=d.new?"adjusted":"accepted"):"rejected";d.applied=v.val;d.msgs=v.msgs;const prev=S.log.length?S.log[S.log.length-1].hash:"GENESIS";d.prev=prev;d.hash=await sha(prev+JSON.stringify([d.t,d.bot,d.type,d.param,d.cur,d.new,d.reason,d.status,d.applied]));S.log.push(d);save();
+ $("#dres").innerHTML=`<div class=card><b class="${v.ok?"pos":"neg"}">${d.status.toUpperCase()}</b> ${v.msgs.join("; ")||"hợp lệ"}</div>`;rlog()};
+async function rlog(){let ok=true,prev="GENESIS";for(const d of S.log){const h=await sha(prev+JSON.stringify([d.t,d.bot,d.type,d.param,d.cur,d.new,d.reason,d.status,d.applied]));if(h!==d.hash||d.prev!==prev){ok=false;d.bad=true}prev=d.hash}
+ $("#dlog").innerHTML=`<p class="${ok?"pos":"neg"}">Chuỗi băm: ${ok?"toàn vẹn":"BỊ SỬA — dòng đỏ bị hỏng"} (${S.log.length} bản ghi)</p><table><tr><th>Giờ<th>Bot<th>Loại<th>Tham số<th class=n>Hiện tại → Áp dụng<th>Trạng thái<th>Lý do<th>Hash</tr>`+S.log.slice().reverse().map(d=>`<tr ${d.bad?'style="background:rgba(200,64,63,.2)"':""}><td>${new Date(d.t).toLocaleString()}<td>${d.bot}<td>${d.type}<td>${d.type=="tune"?d.param:""}<td class=n>${d.type=="tune"?d.cur+" → "+d.applied:""}<td>${d.status}<td>${d.reason}<td class=hash>${d.hash.slice(0,12)}</tr>`).join("")+"</table>"}
+rlog();
+
+/* ---- risk ---- */
+["k1","k2","k3","k4","k5"].forEach(k=>{if(S.k[k]!=null)$("#"+k).value=S.k[k];$("#"+k).onchange=e=>{S.k[k]=+e.target.value;save()}});
+const GD=["Hard limits: biên độ đổi tối đa mỗi lần, số lần đổi/ngày (tab Tham số, Rủi ro)","Circuit breaker: pause khi bất thường (một phần đã có trong EA)","Shadow mode: config mới chạy ảo trước khi nhận vốn (trạng thái 'shadow' ở tab Bot)","Audit log bất biến: chuỗi băm ở tab Quyết định","Kill switch thủ công (thiết kế ở tab Tổng quan, EA chưa đọc)","Rollback nhanh về profile trước"];
+$("#guard").innerHTML=GD.map((t,i)=>`<li><label style="color:inherit;font-size:14px"><input type=checkbox data-i=${i} ${S.guard[i]?"checked":""}> ${t}</label></li>`).join("");
+$("#guard").onchange=e=>{S.guard[e.target.dataset.i]=e.target.checked;save()};
+
+/* ---- assets & backtests ---- */
+fetch("assets.json").then(r=>r.json()).then(d=>{$("#at").innerHTML="<tr><th>Symbol<th>Vai trò<th class=n>ATR M5 (bp)<th class=n>Spread/ATR<th class=n>Lot min<th class=n>Rủi ro lot min ($)<th class=n>Số dư 1%<th class=n>Số dư 2%</tr>"+d.map(r=>`<tr><td>${r.symbol}<td>${r.role||'<span class=m>loại</span>'}<td class=n>${r.atr_bp}<td class=n>${r.spread_over_atr}<td class=n>${r.min_lot}<td class=n>${r["usd_risk_at_min_lot_sl_1.5atr"]}<td class=n>${r.min_balance_for_1pct}<td class=n>${r.min_balance_for_2pct}</tr>`).join("")}).catch(()=>{$("#at").innerHTML="<tr><td>Không tải được assets.json</tr>"});
+const T=["V4 vàng 03–11/2026 (cơ sở)","v3.4 LEGACY vàng cùng kỳ","v3.4 V3 vàng cùng kỳ","V4 USTEC, BTCUSD, DE30, USOIL, XAGUSD cùng kỳ","V4 EURUSD / USDJPY (xem tỉ lệ lệnh bị từ chối vì spread/R)","Blackout bật/tắt cho vàng và chỉ số","Walk-forward: tách đôi kỳ, so kỳ vọng R"];
+$("#bl").innerHTML=T.map((t,i)=>`<li><label style="color:inherit;font-size:14px"><input type=checkbox data-i=${i} ${S.bt[i]?"checked":""}> ${t}</label></li>`).join("");
+$("#bl").onchange=e=>{S.bt[e.target.dataset.i]=e.target.checked;save()};
 </script></body></html>
