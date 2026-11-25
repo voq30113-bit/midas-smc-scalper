@@ -52,7 +52,7 @@
 //|  symbol, all inside [InpRiskMagicLo, InpRiskMagicHi].             |
 //+------------------------------------------------------------------+
 #property copyright "Built with Claude for Bean"
-#property version   "4.30"
+#property version   "4.40"
 #property strict
 
 #include <Trade/Trade.mqh>
@@ -68,8 +68,8 @@ input string InpComment        = "MIDAS_v4";       // Order comment prefix (setu
 enum ENUM_DIR { DIR_BOTH=0, DIR_LONG_ONLY=1, DIR_SHORT_ONLY=2 };
 input ENUM_DIR InpDirection    = DIR_BOTH;         // Which side(s) may trade
 
-enum ENUM_ENGINE { ENGINE_SWEEP = 0, ENGINE_PULLBACK = 1 };
-input ENUM_ENGINE InpEntryEngine = ENGINE_SWEEP;    // SWEEP = liquidity grab -> MSS -> limit. PULLBACK = trend scalper (many trades)
+enum ENUM_ENGINE { ENGINE_SWEEP = 0, ENGINE_PULLBACK = 1, ENGINE_ORB = 2 };
+input ENUM_ENGINE InpEntryEngine = ENGINE_SWEEP;    // SWEEP = liquidity grab -> MSS -> limit. PULLBACK = trend scalper. ORB = breakout of the overnight/Asia range
 
 input group "=== PULLBACK engine (trend scalper) ==="
 input int    InpPbFast         = 20;               // Fast EMA (M5) - the value area price pulls back to
@@ -86,6 +86,16 @@ input int    InpPbCooldownBars = 3;                // M5 bars between two entrie
 input double InpPbRandomPct    = 0.0;              // PLACEBO: >0 replaces the trigger by a random entry (this % of bars, random side) with the same stop/target rules - the benchmark every real trigger must beat
 input double InpPbRandSL_ATR   = 1.0;              // PLACEBO stop distance, x ATR
 input bool   InpPbNoTrend      = false;            // Drop the trend filters (EMA/ADX/H1) - keeps the pullback trigger only
+
+input group "=== ORB engine (breakout of the profile's overnight/Asia range) ==="
+input double InpOrbBufATR      = 0.10;             // Close must clear the range by this x ATR
+input double InpOrbMinRangeATR = 1.0;              // Skip a day whose range is smaller than this x ATR (no energy stored)
+input double InpOrbMaxRangeATR = 8.0;              // ...or larger (move already happened)
+input int    InpOrbSLMode      = 1;                // 0 = stop at the opposite range extreme, 1 = at the range midpoint
+input double InpOrbMinSL_ATR   = 0.60;             // Skip if the stop is tighter than this x ATR
+input double InpOrbMaxSL_ATR   = 2.50;             // Skip if the stop is wider than this x ATR
+input double InpOrbTP1_R       = 1.00;             // First target in R (then BE lock + structural trail)
+input int    InpOrbMaxPerDay   = 1;                // Max breakouts per clock day
 
 input group "=== Asset profile (sessions / blackouts / weekend / day roll) ==="
 enum ENUM_PROFILE
@@ -311,6 +321,8 @@ datetime  g_modBlockBar = 0;     // M5 bar of the last MARKET_CLOSED modify repl
 int       g_atrHandle  = INVALID_HANDLE;
 int       g_hEmaF = INVALID_HANDLE, g_hEmaS = INVALID_HANDLE, g_hAdx = INVALID_HANDLE, g_hEmaH = INVALID_HANDLE;   // pullback engine
 int       g_pbLastBar = -999;
+long      g_orbDay = -1;
+int       g_orbCount = 0;
 double    g_atr        = 0;      // ATR(14) on M5, in price units
 int       g_minLotNotes = 0;     // log throttles
 int       g_spikeUntilBar = 0;   // shock guard: new setups blocked while g_barCounter < this
@@ -2862,6 +2874,78 @@ void TryPullback()
    JournalOpen(dir > 0, tk, js);
 }
 
+
+//==================================================================//
+//  PART 17c - ORB ENGINE (range breakout)                           //
+//==================================================================//
+bool TodayAsiaRange(long today, double &hi, double &lo)
+{
+   hi = 0; lo = 0; int cnt = 0, seen = 0;
+   int n = MathMin(ArraySize(g_m5) - 1, 620);
+   for(int i = 1; i <= n; i++)
+   {
+      if(ClockDayKey(g_m5[i].time) != today){ if(seen > 0) break; continue; }
+      seen++;
+      if(!InWindow(ClockHour(g_m5[i].time), g_p.asiaS, g_p.asiaE)) continue;
+      if(cnt == 0 || H(g_m5,i) > hi) hi = H(g_m5,i);
+      if(cnt == 0 || L(g_m5,i) < lo) lo = L(g_m5,i);
+      cnt++;
+   }
+   return (cnt >= 6 && hi > lo);
+}
+
+void TryORB()
+{
+   if(CountMyPositions() > 0 || CountMyPendings() > 0) return;
+   if(ArraySize(g_m5) < 50 || g_atr <= 0) return;
+   long today = ClockDayKey(TimeCurrent());
+   if(g_orbDay != today){ g_orbDay = today; g_orbCount = 0; }
+   if(g_orbCount >= InpOrbMaxPerDay) return;
+   if(InWindow(ClockHour(TimeCurrent()), g_p.asiaS, g_p.asiaE)) return;          // the range is still forming
+   double hi, lo;
+   if(!TodayAsiaRange(today, hi, lo)){ CountDrop("orb:no_range"); return; }
+   double rATR = (hi - lo) / g_atr;
+   if(rATR < InpOrbMinRangeATR || rATR > InpOrbMaxRangeATR){ CountDrop("orb:range_size"); return; }
+
+   double buf = InpOrbBufATR * g_atr, c1 = C(g_m5,1), c2 = C(g_m5,2);
+   int dir = 0;
+   if(c1 > hi + buf && c2 <= hi + buf) dir = +1;                                  // first close beyond the range
+   else if(c1 < lo - buf && c2 >= lo - buf) dir = -1;
+   else return;
+   if(dir > 0 && InpDirection == DIR_SHORT_ONLY) return;
+   if(dir < 0 && InpDirection == DIR_LONG_ONLY)  return;
+
+   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID), ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   double entry = (dir > 0) ? ask : bid;
+   double mid = (hi + lo) / 2.0;
+   double sl = (InpOrbSLMode == 0) ? ((dir > 0) ? lo : hi) : mid;
+   double minD = MinStopDistance();
+   if(dir > 0 && entry - sl < minD) sl = entry - minD;
+   if(dir < 0 && sl - entry < minD) sl = entry + minD;
+   double R = MathAbs(entry - sl);
+   if(R < InpOrbMinSL_ATR*g_atr){ CountDrop("orb:stop_too_tight"); return; }
+   if(R > InpOrbMaxSL_ATR*g_atr){ CountDrop("orb:stop_too_wide"); return; }
+   double spr = ask - bid;
+   if(g_p.maxSpreadRPct > 0 && spr > g_p.maxSpreadRPct/100.0*R){ CountDrop("orb:spread_vs_R"); return; }
+   double lot = CalcLot(dir > 0, entry, sl);
+   if(lot <= 0){ CountDrop("orb:lot_zero"); return; }
+   sl = NormalizeDouble(sl, g_digits);
+   if(!RiskMgrOK(RiskToStop(_Symbol, dir > 0, lot, entry, sl))){ CountDrop("orb:risk_mgr"); return; }
+
+   string tag = InpComment + "|ORB";
+   double tp1 = (dir > 0) ? entry + InpOrbTP1_R*R : entry - InpOrbTP1_R*R;
+   bool ok = (dir > 0) ? trade.Buy(lot, _Symbol, 0.0, sl, 0.0, tag) : trade.Sell(lot, _Symbol, 0.0, sl, 0.0, tag);
+   if(!ok){ CountDrop("orb:order_failed"); return; }
+   ulong tk = GetPosByType(dir > 0 ? POSITION_TYPE_BUY : POSITION_TYPE_SELL);
+   if(tk == 0) return;
+   g_fArm++; g_fFill++; g_orbCount++;
+   RecordTrade();
+   RegisterNewPosition(dir > 0, R, tp1);
+   if(dir > 0){ g_tp1Long = tp1; g_nRungsL = 0; g_reachedL = 0; } else { g_tp1Short = tp1; g_nRungsS = 0; g_reachedS = 0; }
+   SSetup js; ClearSetup(js); js.tag = tag; js.spread = spr;
+   JournalOpen(dir > 0, tk, js);
+}
+
 //==================================================================//
 //  PART 18 - MAIN TICK ORCHESTRATION                                //
 //==================================================================//
@@ -2932,6 +3016,11 @@ void OnTick()
    if(InpEntryEngine == ENGINE_PULLBACK)
    {
       if(armOK && room) TryPullback();
+      return;
+   }
+   if(InpEntryEngine == ENGINE_ORB)
+   {
+      if(armOK && room) TryORB();
       return;
    }
    ProcessSide(g_setL, +1, armOK && room);
