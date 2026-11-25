@@ -72,7 +72,7 @@ def collect():
 def password():
     pw = os.environ.get("MIDAS_PASSWORD")
     if not pw and os.path.exists(PWFILE):
-        pw = open(PWFILE, encoding="utf-8").read().strip()
+        pw = open(PWFILE, encoding="utf-8-sig").read().strip()
     if not pw:
         sys.exit("No password set. Run once:  python publish_performance.py --set-password")
     return pw
