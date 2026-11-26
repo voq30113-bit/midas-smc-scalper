@@ -52,8 +52,8 @@
   function lineChart(title, series, opts = {}) {
     const w = W, h = 300, p = { l: 62, r: 16, t: 42, b: 30 };
     const all = series.flatMap(s => s.pts); if (all.length < 2) return svgWrap(w, 120, ttl(title) + `<text x="16" y="70" font-size="13" fill="${css("--m")}">Chưa đủ dữ liệu</text>`);
-    let y0 = Math.min(0, ...all.map(a => a[1])), y1 = Math.max(0, ...all.map(a => a[1])); if (y0 === y1) y1 = y0 + 1;
-    const n = Math.max(...series.map(s => s.pts.length)) - 1 || 1;
+    let y0 = all.reduce((m, a) => Math.min(m, a[1]), 0), y1 = all.reduce((m, a) => Math.max(m, a[1]), 0); if (y0 === y1) y1 = y0 + 1;
+    const n = series.reduce((m, s) => Math.max(m, s.pts.length), 0) - 1 || 1;
     const X = i => p.l + (w - p.l - p.r) * i / n, Y = v => p.t + (h - p.t - p.b) * (1 - (v - y0) / (y1 - y0));
     let s = axes(w, h, p, y0, y1, opts.fmt);
     series.forEach(se => {
@@ -100,7 +100,7 @@
     if (!vals.length) return svgWrap(w, 110, ttl(title));
     const c = new Array(bins).fill(0), step = (hi - lo) / bins;
     vals.forEach(v => { c[Math.max(0, Math.min(bins - 1, Math.floor((v - lo) / step)))]++; });
-    const mx = Math.max(...c), bw = (w - p.l - p.r) / bins;
+    const mx = c.reduce((m, v) => Math.max(m, v), -Infinity), bw = (w - p.l - p.r) / bins;
     let s = ttl(title);
     for (let i = 0; i <= 4; i++) { const y = p.t + (h - p.t - p.b) * (1 - i / 4); s += `<line x1="${p.l}" x2="${w - p.r}" y1="${y}" y2="${y}" stroke="${css("--bd")}"/><text x="${p.l - 8}" y="${y + 4}" font-size="12" text-anchor="end" fill="${css("--m")}">${Math.round(mx * i / 4)}</text>`; }
     c.forEach((k, i) => {
@@ -146,7 +146,7 @@
   function miniCurve(pts, dd, w = 360, h = 150) {
     const p = { l: 44, r: 8, t: 10, b: 20 };
     const all = pts.map(a => a[1]).concat(dd.map(a => a[1]), [0]);
-    let y0 = Math.min(...all), y1 = Math.max(...all); if (y0 === y1) y1 = y0 + 1;
+    let y0 = all.reduce((m, v) => Math.min(m, v), Infinity), y1 = all.reduce((m, v) => Math.max(m, v), -Infinity); if (y0 === y1) y1 = y0 + 1;
     const n = Math.max(1, pts.length - 1);
     const X = i => p.l + (w - p.l - p.r) * i / n, Y = v => p.t + (h - p.t - p.b) * (1 - (v - y0) / (y1 - y0));
     const line = a => a.map((q, i) => (i ? "L" : "M") + X(i).toFixed(1) + "," + Y(q[1]).toFixed(1)).join("");

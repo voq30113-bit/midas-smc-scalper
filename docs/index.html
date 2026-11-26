@@ -192,7 +192,7 @@ code{background:#0b1220;padding:1px 5px;border-radius:4px;font-size:12px}
 <h2>Backtest cần chạy</h2><ul class="c" id="bl"></ul>
 </section>
 </main></div></div>
-<script src="perf.js"></script>
+<script src="perf.js?v=20261126b"></script>
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 let S={bots:[{symbol:"XAUUSD",profile:"GOLD",magic:580001,cap:30,state:"shadow"},{symbol:"USTEC",profile:"INDEX_US",magic:580003,cap:30,state:"shadow"},{symbol:"BTCUSD",profile:"CRYPTO",magic:580008,cap:20,state:"shadow"}],
@@ -309,7 +309,9 @@ const AK="midas_pw";let PW=null,TIMER=null;
 const b64=x=>Uint8Array.from(atob(x),c=>c.charCodeAt(0));
 async function decrypt(env,pw){const km=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
  const key=await crypto.subtle.deriveKey({name:"PBKDF2",salt:b64(env.salt),iterations:env.iter,hash:"SHA-256"},km,{name:"AES-GCM",length:256},false,["decrypt"]);
- const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(env.iv)},key,b64(env.ct));return JSON.parse(new TextDecoder().decode(pt))}
+ const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(env.iv)},key,b64(env.ct));let u=pt;
+ if(env.z){u=await new Response(new Blob([pt]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()}
+ return JSON.parse(new TextDecoder().decode(u))}
 async function loadData(pw){const r=await fetch("data/performance.enc.json?t="+Date.now());
  if(!r.ok)throw new Error("Chưa có dữ liệu: Agent chưa chạy publish_performance.py --push");
  let d;try{d=await decrypt(await r.json(),pw)}catch(e){throw new Error("Sai mật khẩu")}perfSet(d)}

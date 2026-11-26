@@ -26,6 +26,10 @@ REPORT_KEYS = ("profit", "gross_profit", "gross_loss", "profit_factor", "expecte
                "loss_trades", "long_trades", "short_trades", "max_consecutive_loss_trades", "initial_deposit")
 
 
+KEEP = ("close_utc", "open_utc", "symbol", "magic", "tag", "dir", "pnl_money", "pnl_r", "mfe_r", "mae_r", "hold_min", "exit",
+        "vol_regime", "trend_regime", "clock_hour", "balance_after", "lot", "r_atr", "spread_r_pct", "run")   # fields the page uses: keeps the payload small
+
+
 def read_journal(path, run):
     rows = []
     with open(path, newline="", encoding="utf-8", errors="replace") as f:
@@ -37,7 +41,7 @@ def read_journal(path, run):
                 continue
             r["run"] = run
             r["clock_hour"] = int(float(r.get("clock_hour", 0)))
-            rows.append(r)
+            rows.append({k: r[k] for k in KEEP if k in r})
     return rows
 
 
@@ -91,9 +95,10 @@ def encrypt(obj, pw):
     from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
     salt, iv = os.urandom(16), os.urandom(12)
     key = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=ITER).derive(pw.encode("utf-8"))
-    ct = AESGCM(key).encrypt(iv, json.dumps(obj, separators=(",", ":")).encode("utf-8"), None)
+    import gzip
+    ct = AESGCM(key).encrypt(iv, gzip.compress(json.dumps(obj, separators=(",", ":")).encode("utf-8"), 9), None)
     b = lambda x: base64.b64encode(x).decode()
-    return {"v": 1, "iter": ITER, "salt": b(salt), "iv": b(iv), "ct": b(ct)}
+    return {"v": 1, "z": 1, "iter": ITER, "salt": b(salt), "iv": b(iv), "ct": b(ct)}
 
 
 def fingerprint(data):
