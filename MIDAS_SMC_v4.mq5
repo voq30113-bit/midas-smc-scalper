@@ -52,7 +52,7 @@
 //|  symbol, all inside [InpRiskMagicLo, InpRiskMagicHi].             |
 //+------------------------------------------------------------------+
 #property copyright "Built with Claude for Bean"
-#property version   "4.50"
+#property version   "4.60"
 #property strict
 
 #include <Trade/Trade.mqh>
@@ -68,9 +68,18 @@ input string InpComment        = "MIDAS_v4";       // Order comment prefix (setu
 enum ENUM_DIR { DIR_BOTH=0, DIR_LONG_ONLY=1, DIR_SHORT_ONLY=2 };
 input ENUM_DIR InpDirection    = DIR_BOTH;         // Which side(s) may trade
 
-enum ENUM_ENGINE { ENGINE_SWEEP = 0, ENGINE_PULLBACK = 1, ENGINE_ORB = 2 };
+enum ENUM_ENGINE { ENGINE_SWEEP = 0, ENGINE_PULLBACK = 1, ENGINE_ORB = 2, ENGINE_MOM = 3 };
 input ENUM_ENGINE InpEntryEngine = ENGINE_SWEEP;    // SWEEP = liquidity grab -> MSS -> limit. PULLBACK = trend scalper. ORB = breakout of the overnight/Asia range
 
+input group "=== MOMENTUM engine (large-body bar, hold to end of day) ==="
+input double InpMomK        = 2.0;     // Signal: closed bar body > K x ATR of the bar before it
+input double InpMomSL_ATR   = 3.0;     // Stop distance, x ATR
+input double InpMomVolMin   = 1.0;     // Trade only when ATR >= this x its slow average (0 = off)
+input int    InpMomStartUTC = 7;       // Signals from this UTC hour
+input int    InpMomEndUTC   = 20;      // ... until this UTC hour (exclusive)
+input int    InpMomFlatUTC  = 21;      // Close at this UTC hour (and always at the UTC day change)
+input int    InpMomMaxBars  = 288;     // Max bars held
+input double InpMomTP_R     = 0.0;     // Optional target in R (0 = none)
 input group "=== PULLBACK engine (trend scalper) ==="
 input int    InpPbFast         = 20;               // Fast EMA (M5) - the value area price pulls back to
 input int    InpPbSlow         = 50;               // Slow EMA (M5) - trend = fast above/below slow and price on the right side
@@ -322,6 +331,8 @@ int       g_atrHandle  = INVALID_HANDLE;
 int       g_hEmaF = INVALID_HANDLE, g_hEmaS = INVALID_HANDLE, g_hAdx = INVALID_HANDLE, g_hEmaH = INVALID_HANDLE;   // pullback engine
 int       g_pbLastBar = -999;
 int       g_k = 1;               // bar scale (M1 = 5)
+double    g_momSlow = 0;         // slow average of ATR (momentum engine volatility filter)
+long      g_momDayL = -1, g_momDayS = -1;   // UTC day on which each side already had its signal
 long      g_orbDay = -1;
 int       g_orbCount = 0;
 double    g_atr        = 0;      // ATR(14) on M5, in price units
@@ -2577,8 +2588,10 @@ void ManageOne(ulong tk, bool isLong)
    }
 }
 
+void ManageMomentum();
 void ManagePositions()
 {
+   if(InpEntryEngine == ENGINE_MOM){ ManageMomentum(); return; }
    ulong tkL = GetPosByType(POSITION_TYPE_BUY);
    ulong tkS = GetPosByType(POSITION_TYPE_SELL);
    if(tkL == 0){ g_tkLong = 0;  g_doneLong = false; g_cutLong  = false; }
@@ -2950,6 +2963,96 @@ void TryORB()
 }
 
 //==================================================================//
+//==================================================================//
+//  PART 17d - MOMENTUM ENGINE                                       //
+//==================================================================//
+// Research (research/engines.py): on US30/US500/USTEC/DE30 a large-body M5 bar in an above-average volatility regime
+// tended to continue until the end of the day. Market entry in the bar's direction, ATR stop, no trailing or partials,
+// flat by InpMomFlatUTC. One signal per side per UTC day.
+void MomUpdateSlow()
+{
+   if(g_momSlow <= 0)
+   {
+      double a[];
+      int got = CopyBuffer(g_atrHandle, 0, 1, 4000, a);
+      if(got < 500) return;
+      // skip not-yet-calculated cells (0 / EMPTY_VALUE) at the start of the history, or the average is poisoned for good
+      double s = 0; int n = 0;
+      for(int i = 0; i < got; i++)
+      {
+         if(a[i] <= 0 || a[i] == EMPTY_VALUE) continue;
+         if(n == 0) s = a[i]; else s += (a[i] - s) / 1000.0;
+         n++;
+      }
+      if(n >= 500) g_momSlow = s;
+      return;
+   }
+   g_momSlow += (g_atr - g_momSlow) / 1000.0;
+}
+
+void TryMomentum()
+{
+   if(ArraySize(g_m5) < 10 || g_atr <= 0 || g_momSlow <= 0) return;
+   datetime tBar = ServerToUTC(iTime(_Symbol, PERIOD_CURRENT, 1));
+   MqlDateTime d; TimeToStruct(tBar, d);
+   if(d.hour < InpMomStartUTC || d.hour >= InpMomEndUTC) return;
+   double a2[];
+   if(CopyBuffer(g_atrHandle, 0, 2, 1, a2) < 1) return;
+   double body = iClose(_Symbol, PERIOD_CURRENT, 1) - iOpen(_Symbol, PERIOD_CURRENT, 1);
+   if(MathAbs(body) <= InpMomK * a2[0]) return;
+   int dir = (body > 0) ? +1 : -1;
+   long day = (long)tBar / 86400;
+   if(dir > 0){ if(g_momDayL == day) return; g_momDayL = day; }
+   else       { if(g_momDayS == day) return; g_momDayS = day; }
+   g_fGrab++;
+   if(dir > 0 && InpDirection == DIR_SHORT_ONLY) return;
+   if(dir < 0 && InpDirection == DIR_LONG_ONLY)  return;
+   if(CountMyPositions() > 0 || CountMyPendings() > 0){ CountDrop("mom:busy"); return; }
+   if(InpMomVolMin > 0 && g_atr < InpMomVolMin * g_momSlow){ CountDrop("mom:low_vol"); return; }
+   if(HaltNow()){ CountDrop("mom:news_halt"); return; }
+   if(!SpreadOK() || !DailyLimitsOK()){ CountDrop("mom:gate"); return; }
+
+   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID), ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   double entry = (dir > 0) ? ask : bid, R = InpMomSL_ATR * g_atr;
+   R = MathMax(R, MinStopDistance());
+   double sl = NormalizeDouble(entry - dir * R, g_digits), spr = ask - bid;
+   if(g_p.maxSpreadRPct > 0 && spr > g_p.maxSpreadRPct/100.0*R){ CountDrop("mom:spread_vs_R"); return; }
+   double lot = CalcLot(dir > 0, entry, sl);
+   if(lot <= 0){ CountDrop("mom:lot_zero"); return; }
+   if(!RiskMgrOK(RiskToStop(_Symbol, dir > 0, lot, entry, sl))){ CountDrop("mom:risk_mgr"); return; }
+   double tp = (InpMomTP_R > 0) ? NormalizeDouble(entry + dir * InpMomTP_R * R, g_digits) : 0.0;
+   string tag = InpComment + "|MOM";
+   bool ok = (dir > 0) ? trade.Buy(lot, _Symbol, 0.0, sl, tp, tag) : trade.Sell(lot, _Symbol, 0.0, sl, tp, tag);
+   if(!ok){ CountDrop("mom:order_failed"); return; }
+   ulong tk = GetPosByType(dir > 0 ? POSITION_TYPE_BUY : POSITION_TYPE_SELL);
+   if(tk == 0) return;
+   g_fArm++; g_fFill++;
+   RecordTrade();
+   RegisterNewPosition(dir > 0, R, 0.0);
+   SSetup js; ClearSetup(js); js.tag = tag; js.spread = spr;
+   JournalOpen(dir > 0, tk, js);
+}
+
+// Time exit only; the stop (and optional target) live on the server.
+void ManageMomentum()
+{
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong tk = PositionGetTicket(i);
+      if(!PositionSelectByTicket(tk)) continue;
+      if(PositionGetInteger(POSITION_MAGIC) != InpMagic || PositionGetString(POSITION_SYMBOL) != _Symbol) continue;
+      bool isLong = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY);
+      double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID), ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+      if(isLong) JrnUpd(g_jL, true, bid, ask); else JrnUpd(g_jS, false, bid, ask);
+      datetime tOpen = (datetime)PositionGetInteger(POSITION_TIME);
+      datetime uOpen = ServerToUTC(tOpen), uNow = ServerToUTC(TimeCurrent());
+      MqlDateTime d; TimeToStruct(uNow, d);
+      if((long)uNow / 86400 != (long)uOpen / 86400 || d.hour >= InpMomFlatUTC ||
+         (long)(TimeCurrent() - tOpen) >= (long)InpMomMaxBars * PeriodSeconds(PERIOD_CURRENT))
+         trade.PositionClose(tk);
+   }
+}
+
 //  PART 18 - MAIN TICK ORCHESTRATION                                //
 //==================================================================//
 void OnTick()
@@ -2973,6 +3076,7 @@ void OnTick()
    int need = MathMax(MathMax(InpStructLookback, InpPoolLookback) + 10, 620 * g_k);
    if(CopyRates(_Symbol, PERIOD_CURRENT, 0, need, g_m5) < 50) return;
    if(!RefreshATR()) return;
+   if(InpEntryEngine == ENGINE_MOM) MomUpdateSlow();
 
    // Shock guard: a closed bar this violent (news, flash move) means price discovery, not a clean sweep.
    if(InpSpikeRangeATR > 0 && (H(g_m5,1) - L(g_m5,1)) >= InpSpikeRangeATR*g_atr)
@@ -3000,6 +3104,12 @@ void OnTick()
    {
       if(CountMyPendings()  > 0) CancelAllPendings();
       if(CountMyPositions() > 0){ FlattenAll(); Print("MIDAS v4: flat for the weekend"); }
+      return;
+   }
+
+   if(InpEntryEngine == ENGINE_MOM)
+   {
+      TryMomentum();
       return;
    }
 

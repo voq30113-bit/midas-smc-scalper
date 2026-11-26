@@ -1,0 +1,103 @@
+
+## gold family (Exness)
+   ALL            n= 112 exp=+0.53R win= 46% PF= 1.99 avgMFE=2.44
+  by dir
+   L              n=  66 exp=+0.12R win= 45% PF= 1.21 avgMFE=2.03
+   S              n=  46 exp=+1.13R win= 48% PF= 3.17 avgMFE=3.02
+  by exit
+   SL             n= 112 exp=+0.53R win= 46% PF= 1.99 avgMFE=2.44
+  by tag
+   MIDAS_v4|SWASIA n=   2 exp=-1.00R win=  0% PF= 0.00 avgMFE=0.00
+   MIDAS_v4|SWPIV n= 110 exp=+0.56R win= 47% PF= 2.06 avgMFE=2.48
+  by htf
+   -1             n=  21 exp=+2.36R win= 52% PF= 5.95 avgMFE=4.33
+   0              n=  68 exp=+0.18R win= 49% PF= 1.35 avgMFE=2.14
+   1              n=  23 exp=-0.10R win= 35% PF= 0.85 avgMFE=1.59
+  by vol_regime
+   HIGH           n=   4 exp=-0.26R win= 50% PF= 0.48 avgMFE=1.08
+   LOW            n=  32 exp=+0.09R win= 50% PF= 1.17 avgMFE=2.07
+   NORM           n=  76 exp=+0.76R win= 45% PF= 2.38 avgMFE=2.66
+  by trend_regime
+   FLAT           n=  68 exp=+0.18R win= 49% PF= 1.35 avgMFE=2.14
+   WITH           n=  44 exp=+1.08R win= 43% PF= 2.89 avgMFE=2.90
+  by hour block (profile clock)
+   00-10          n=  35 exp=+0.95R win= 37% PF= 2.52 avgMFE=2.56
+   10-13          n=  31 exp=+0.48R win= 55% PF= 2.05 avgMFE=2.32
+   13-16          n=  44 exp=+0.22R win= 45% PF= 1.41 avgMFE=2.38
+   16-24          n=   2 exp=+0.80R win=100% PF=99.00 avgMFE=3.45
+  by hold minutes
+   0-15           n=  28 exp=-0.92R win=  7% PF= 0.00 avgMFE=0.40
+   15-60          n=  29 exp=-0.84R win= 10% PF= 0.06 avgMFE=0.80
+   60-240         n=  39 exp=+1.26R win= 79% PF= 7.14 avgMFE=3.63
+   240-1000000    n=  16 exp=+3.80R win=100% PF=99.00 avgMFE=6.08
+  full losers: 60; of them reached +0.5R first: 19, +1R first: 9
+  MFE share >= 1R/2R/3R/5R: [0.54, 0.42, 0.3, 0.14]
+
+## gold Duka 2021-26
+   ALL            n= 100 exp=+0.83R win= 33% PF= 2.24 avgMFE=2.50
+  by dir
+   L              n=  54 exp=+0.70R win= 33% PF= 2.04 avgMFE=2.34
+   S              n=  46 exp=+0.98R win= 33% PF= 2.46 avgMFE=2.70
+  by exit
+   EA             n=   1 exp=+7.16R win=100% PF=99.00 avgMFE=9.19
+   SL             n=  99 exp=+0.76R win= 32% PF= 2.13 avgMFE=2.44
+  by tag
+   MIDAS_v4|SWASIA n=   1 exp=-1.00R win=  0% PF= 0.00 avgMFE=0.26
+   MIDAS_v4|SWPIV n=  99 exp=+0.85R win= 33% PF= 2.27 avgMFE=2.53
+  by htf
+   -1             n=  21 exp=+2.66R win= 38% PF= 5.29 avgMFE=4.54
+   0              n=  51 exp=+0.08R win= 33% PF= 1.12 avgMFE=1.79
+   1              n=  28 exp=+0.82R win= 29% PF= 2.15 avgMFE=2.28
+  by vol_regime
+   HIGH           n=  11 exp=+0.21R win= 36% PF= 1.32 avgMFE=1.89
+   LOW            n=  34 exp=-0.46R win= 21% PF= 0.43 avgMFE=1.15
+   NORM           n=  55 exp=+1.75R win= 40% PF= 3.91 avgMFE=3.46
+  by trend_regime
+   FLAT           n=  51 exp=+0.08R win= 33% PF= 1.12 avgMFE=1.79
+   WITH           n=  49 exp=+1.61R win= 33% PF= 3.39 avgMFE=3.25
+  by hour block (profile clock)
+   00-10          n=  25 exp=+0.72R win= 24% PF= 1.94 avgMFE=2.17
+   10-13          n=  27 exp=+1.34R win= 44% PF= 3.42 avgMFE=2.96
+   13-16          n=  44 exp=+0.66R win= 30% PF= 1.94 avgMFE=2.48
+   16-24          n=   4 exp=-0.10R win= 50% PF= 0.80 avgMFE=1.76
+  by hold minutes
+   0-15           n=  32 exp=-0.97R win=  3% PF= 0.00 avgMFE=0.25
+   15-60          n=  30 exp=-0.76R win=  7% PF= 0.19 avgMFE=0.88
+   60-240         n=  24 exp=+1.02R win= 67% PF= 4.05 avgMFE=3.20
+   240-1000000    n=  14 exp=+8.01R win=100% PF=99.00 avgMFE=9.95
+  full losers: 67; of them reached +0.5R first: 20, +1R first: 8
+  MFE share >= 1R/2R/3R/5R: [0.41, 0.28, 0.24, 0.15]
+
+## indices (Exness)
+   ALL            n=  80 exp=+0.59R win= 44% PF= 2.07 avgMFE=2.22
+  by dir
+   L              n=  36 exp=+1.11R win= 50% PF= 3.32 avgMFE=2.67
+   S              n=  44 exp=+0.16R win= 39% PF= 1.27 avgMFE=1.85
+  by exit
+   SL             n=  80 exp=+0.59R win= 44% PF= 2.07 avgMFE=2.22
+  by tag
+   MIDAS_v4|SWASIA n=   5 exp=-0.25R win= 20% PF= 0.68 avgMFE=1.25
+   MIDAS_v4|SWPIV n=  75 exp=+0.64R win= 45% PF= 2.20 avgMFE=2.29
+  by htf
+   -1             n=  16 exp=-0.07R win= 50% PF= 0.85 avgMFE=1.94
+   0              n=  45 exp=+1.17R win= 49% PF= 3.28 avgMFE=2.70
+   1              n=  19 exp=-0.24R win= 26% PF= 0.66 avgMFE=1.32
+  by vol_regime
+   HIGH           n=  40 exp=+1.24R win= 52% PF= 3.75 avgMFE=2.78
+   LOW            n=   7 exp=-0.85R win= 14% PF= 0.00 avgMFE=0.54
+   NORM           n=  33 exp=+0.10R win= 39% PF= 1.16 avgMFE=1.90
+  by trend_regime
+   FLAT           n=  45 exp=+1.17R win= 49% PF= 3.28 avgMFE=2.70
+   WITH           n=  35 exp=-0.16R win= 37% PF= 0.73 avgMFE=1.60
+  by hour block (profile clock)
+   00-10          n=   2 exp=+0.66R win=100% PF=99.00 avgMFE=2.25
+   10-13          n=   4 exp=+1.38R win= 50% PF= 3.75 avgMFE=2.96
+   13-16          n=   8 exp=-0.31R win= 38% PF= 0.51 avgMFE=1.64
+   16-24          n=  66 exp=+0.65R win= 42% PF= 2.15 avgMFE=2.25
+  by hold minutes
+   0-15           n=  22 exp=-0.95R win=  5% PF= 0.00 avgMFE=0.25
+   15-60          n=  22 exp=-0.46R win= 23% PF= 0.41 avgMFE=1.44
+   60-240         n=  17 exp=+1.22R win= 76% PF= 6.19 avgMFE=2.81
+   240-1000000    n=  19 exp=+3.02R win= 84% PF=27.20 avgMFE=4.87
+  full losers: 44; of them reached +0.5R first: 17, +1R first: 5
+  MFE share >= 1R/2R/3R/5R: [0.51, 0.4, 0.3, 0.15]

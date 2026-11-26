@@ -19,3 +19,8 @@
 !Agent/
 !Agent/*.py
 !Agent/README.md
+!tools/*.mq5
+!research/
+!research/*.py
+!research/*.md
+!research/*.txt

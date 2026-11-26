@@ -1,0 +1,21 @@
+base           n= 1013 exp=+0.191 t= 2.9 PF=1.30 half +0.19/+0.19 maxDD= 43.2R months+ 12/18 | US30:+0.19 US500:+0.24 USTEC:+0.11 DE30:+0.23
+K=1.5          n=  797 exp=+0.229 t= 2.7 PF=1.33 half +0.44/+0.02 maxDD= 83.9R months+ 11/17 | US30:+0.38 US500:+0.25 USTEC:+0.04 DE30:+0.24
+K=2.5          n=  811 exp=+0.062 t= 1.0 PF=1.10 half +0.10/+0.02 maxDD= 50.1R months+ 11/18 | US30:+0.15 US500:+0.16 USTEC:-0.02 DE30:-0.07
+K=3.0          n=  621 exp=+0.109 t= 1.5 PF=1.17 half +0.15/+0.07 maxDD= 34.6R months+ 10/18 | US30:+0.15 US500:+0.22 USTEC:+0.00 DE30:+0.05
+S=2            n= 1053 exp=+0.194 t= 2.4 PF=1.26 half +0.24/+0.15 maxDD= 28.3R months+ 11/18 | US30:+0.16 US500:+0.26 USTEC:+0.12 DE30:+0.23
+S=4            n=  988 exp=+0.136 t= 2.6 PF=1.25 half +0.14/+0.13 maxDD= 45.7R months+ 11/18 | US30:+0.20 US500:+0.11 USTEC:+0.06 DE30:+0.17
+S=5            n=  968 exp=+0.099 t= 2.2 PF=1.20 half +0.10/+0.10 maxDD= 35.4R months+ 12/18 | US30:+0.17 US500:+0.07 USTEC:+0.02 DE30:+0.13
+V=0.0          n= 1644 exp=+0.133 t= 2.3 PF=1.18 half +0.12/+0.14 maxDD= 62.6R months+ 14/18 | US30:-0.04 US500:+0.23 USTEC:+0.22 DE30:+0.14
+V=0.8          n= 1305 exp=+0.188 t= 3.1 PF=1.28 half +0.23/+0.15 maxDD= 59.8R months+ 15/18 | US30:+0.18 US500:+0.21 USTEC:+0.16 DE30:+0.20
+V=1.2          n=  723 exp=+0.094 t= 1.3 PF=1.15 half +0.10/+0.09 maxDD= 42.8R months+ 10/18 | US30:-0.05 US500:+0.11 USTEC:+0.07 DE30:+0.23
+V=1.5          n=  362 exp=-0.079 t=-1.1 PF=0.87 half -0.03/-0.13 maxDD= 50.7R months+ 6/17 | US30:-0.14 US500:-0.24 USTEC:-0.13 DE30:+0.18
+hours=(7, 13)   n=  440 exp=+0.208 t= 1.9 PF=1.30 half +0.19/+0.23 maxDD= 29.0R months+ 12/17 | US30:+0.21 US500:+0.20 USTEC:+0.03 DE30:+0.28
+hours=(13, 17)   n=  855 exp=+0.080 t= 1.2 PF=1.12 half +0.17/-0.01 maxDD= 74.2R months+ 9/18 | US30:+0.13 US500:+0.12 USTEC:+0.02 DE30:-0.01
+hours=(13, 20)   n=  968 exp=+0.062 t= 1.1 PF=1.10 half +0.11/+0.01 maxDD= 84.5R months+ 10/18 | US30:+0.10 US500:+0.07 USTEC:+0.03 DE30:+0.04
+hours=(0, 20)   n=  727 exp=+0.228 t= 2.8 PF=1.35 half +0.26/+0.19 maxDD= 26.5R months+ 13/17 | US30:+0.26 US500:+0.33 USTEC:+0.17 DE30:+0.16
+hold=24       n= 1085 exp=+0.084 t= 2.1 PF=1.17 half +0.05/+0.12 maxDD= 26.3R months+ 12/18 | US30:+0.04 US500:+0.15 USTEC:+0.09 DE30:+0.05
+hold=48       n= 1062 exp=+0.085 t= 1.7 PF=1.15 half +0.08/+0.09 maxDD= 39.3R months+ 12/18 | US30:+0.07 US500:+0.17 USTEC:+0.05 DE30:+0.05
+hold=96       n= 1021 exp=+0.194 t= 3.0 PF=1.31 half +0.23/+0.16 maxDD= 51.2R months+ 13/18 | US30:+0.19 US500:+0.24 USTEC:+0.16 DE30:+0.20
+tp=2.0R        n= 1064 exp=+0.052 t= 1.2 PF=1.09 half +0.06/+0.04 maxDD= 47.0R months+ 12/18 | US30:+0.03 US500:+0.07 USTEC:+0.03 DE30:+0.08
+tp=4.0R        n= 1027 exp=+0.155 t= 2.8 PF=1.25 half +0.22/+0.09 maxDD= 32.4R months+ 14/18 | US30:+0.12 US500:+0.23 USTEC:+0.07 DE30:+0.20
+spread x2      n=  984 exp=+0.171 t= 2.6 PF=1.27 half +0.18/+0.16 maxDD= 39.7R months+ 11/17 | US30:+0.17 US500:+0.22 USTEC:+0.08 DE30:+0.23

@@ -1,0 +1,54 @@
+
+## gold: 180 configs, 56 with pooled exp>0   (cfg = signal|stopATR|trailATR|maxBars|tpR|volFilter)
+  don288|6|12|288|0|1.0    both-halves+ 4/5  pooled +0.049R  n=1439
+      XAUUSD:+0.12/+0.18  XAUEUR:+0.06/+0.12  XAUGBP:+0.20/+0.21  XAGUSD:+0.01/+0.02  XAUUSD_DUKA:-0.05/+0.08
+  don288|6|12|288|0|0.0    both-halves+ 4/5  pooled +0.029R  n=1918
+      XAUUSD:+0.12/+0.10  XAUEUR:+0.14/+0.02  XAUGBP:+0.20/+0.08  XAGUSD:+0.04/+0.02  XAUUSD_DUKA:-0.05/+0.07
+  don288|10|10|288|0|1.0   both-halves+ 4/5  pooled +0.016R  n=1408
+      XAUUSD:+0.02/+0.09  XAUEUR:+0.04/+0.05  XAUGBP:+0.12/+0.10  XAGUSD:+0.04/+0.03  XAUUSD_DUKA:-0.05/+0.04
+  mom|10|10|288|0|1.0      both-halves+ 4/5  pooled +0.013R  n=1509
+      XAUUSD:+0.10/+0.10  XAUEUR:+0.26/+0.02  XAUGBP:+0.59/+0.03  XAGUSD:+0.00/+0.06  XAUUSD_DUKA:-0.01/-0.03
+  mom|10|20|288|0|1.0      both-halves+ 4/5  pooled +0.011R  n=1506
+      XAUUSD:+0.09/+0.09  XAUEUR:+0.17/+0.00  XAUGBP:+0.44/+0.01  XAGUSD:+0.03/+0.08  XAUUSD_DUKA:-0.01/-0.03
+  mom|10|0|288|0|1.0       both-halves+ 4/5  pooled +0.011R  n=1506
+      XAUUSD:+0.09/+0.09  XAUEUR:+0.17/+0.00  XAUGBP:+0.44/+0.01  XAGUSD:+0.01/+0.08  XAUUSD_DUKA:-0.01/-0.02
+  don288|10|10|288|0|0.0   both-halves+ 4/5  pooled +0.010R  n=1884
+      XAUUSD:+0.03/+0.06  XAUEUR:+0.08/+0.03  XAUGBP:+0.12/+0.03  XAGUSD:+0.01/+0.05  XAUUSD_DUKA:-0.04/+0.03
+  asia|10|20|288|0|1.0     both-halves+ 4/5  pooled +0.002R  n=1412
+      XAUUSD:+0.00/+0.10  XAUEUR:+0.19/+0.02  XAUGBP:+0.15/+0.03  XAGUSD:+0.02/+0.05  XAUUSD_DUKA:-0.05/+0.02
+
+## index: 180 configs, 120 with pooled exp>0   (cfg = signal|stopATR|trailATR|maxBars|tpR|volFilter)
+  asia|10|20|288|0|1.0     both-halves+ 5/6  pooled +0.065R  n=1225
+      US30:+0.09/+0.03  US500:+0.06/+0.10  USTEC:+0.12/+0.01  DE30:+0.12/+0.06  UK100:+0.08/+0.04  JP225:+0.13/-0.05
+  asia|10|0|288|0|1.0      both-halves+ 5/6  pooled +0.065R  n=1225
+      US30:+0.09/+0.03  US500:+0.06/+0.10  USTEC:+0.12/+0.01  DE30:+0.12/+0.06  UK100:+0.08/+0.04  JP225:+0.13/-0.05
+  mom|3|0|288|0|1.0        both-halves+ 4/6  pooled +0.150R  n=1360
+      US30:+0.32/+0.08  US500:+0.28/+0.19  USTEC:+0.18/+0.05  DE30:+0.07/+0.36  UK100:-0.14/-0.03  JP225:+0.34/-0.01
+  mom|3|6|288|0|1.0        both-halves+ 4/6  pooled +0.122R  n=1375
+      US30:+0.19/-0.08  US500:+0.17/+0.12  USTEC:+0.13/+0.09  DE30:+0.18/+0.32  UK100:+0.01/-0.07  JP225:+0.36/+0.07
+  asia|3|0|288|0|1.0       both-halves+ 4/6  pooled +0.105R  n=1405
+      US30:+0.32/+0.00  US500:+0.18/+0.10  USTEC:-0.01/+0.01  DE30:+0.21/+0.12  UK100:+0.18/+0.05  JP225:+0.32/-0.16
+  mom|3|0|24|0|1.0         both-halves+ 4/6  pooled +0.079R  n=1460
+      US30:+0.08/+0.01  US500:+0.19/+0.12  USTEC:+0.09/+0.10  DE30:-0.00/+0.10  UK100:+0.14/-0.12  JP225:+0.34/+0.09
+  mom|6|0|288|0|1.0        both-halves+ 4/6  pooled +0.050R  n=1291
+      US30:+0.08/+0.11  US500:+0.06/+0.05  USTEC:+0.05/+0.01  DE30:+0.07/+0.08  UK100:-0.07/-0.04  JP225:+0.23/-0.04
+  mom|6|6|288|0|1.0        both-halves+ 4/6  pooled +0.045R  n=1331
+      US30:+0.03/-0.01  US500:+0.02/+0.03  USTEC:+0.03/+0.00  DE30:+0.12/+0.11  UK100:+0.05/-0.06  JP225:+0.25/+0.06
+
+## other: 180 configs, 50 with pooled exp>0   (cfg = signal|stopATR|trailATR|maxBars|tpR|volFilter)
+  mom|6|0|288|0|0.0        both-halves+ 2/6  pooled +0.032R  n=1814
+      BTCUSD:+0.09/+0.23  ETHUSD:+0.22/+0.03  USOIL:-0.10/+0.02  EURUSD:+0.09/-0.06  GBPUSD:-0.09/-0.03  USDJPY:+0.04/-0.05
+  pdhl|10|0|288|0|1.0      both-halves+ 2/6  pooled +0.025R  n=1048
+      BTCUSD:-0.01/+0.09  ETHUSD:-0.05/-0.02  USOIL:+0.13/+0.05  EURUSD:+0.08/-0.10  GBPUSD:-0.02/+0.03  USDJPY:+0.03/+0.03
+  pdhl|10|20|288|0|1.0     both-halves+ 2/6  pooled +0.025R  n=1048
+      BTCUSD:-0.01/+0.09  ETHUSD:-0.05/-0.02  USOIL:+0.13/+0.05  EURUSD:+0.08/-0.10  GBPUSD:-0.02/+0.03  USDJPY:+0.04/+0.03
+  pdhl|10|0|72|1.5|1.0     both-halves+ 2/6  pooled +0.025R  n=1065
+      BTCUSD:+0.01/-0.01  ETHUSD:-0.06/+0.00  USOIL:+0.07/+0.07  EURUSD:+0.12/+0.03  GBPUSD:-0.05/+0.04  USDJPY:+0.04/-0.04
+  pdhl|6|12|288|0|1.0      both-halves+ 2/6  pooled +0.025R  n=1063
+      BTCUSD:-0.05/+0.14  ETHUSD:-0.06/-0.09  USOIL:+0.14/+0.05  EURUSD:+0.12/-0.10  GBPUSD:-0.03/+0.03  USDJPY:+0.08/+0.01
+  mom|6|12|288|0|0.0       both-halves+ 2/6  pooled +0.024R  n=1819
+      BTCUSD:+0.07/+0.15  ETHUSD:+0.24/+0.04  USOIL:-0.11/+0.04  EURUSD:+0.07/-0.05  GBPUSD:-0.09/-0.01  USDJPY:+0.05/-0.08
+  pdhl|6|0|288|0|1.0       both-halves+ 2/6  pooled +0.024R  n=1062
+      BTCUSD:-0.05/+0.14  ETHUSD:-0.03/-0.10  USOIL:+0.15/+0.03  EURUSD:+0.12/-0.11  GBPUSD:-0.04/+0.03  USDJPY:+0.05/+0.04
+  pdhl|6|0|72|1.5|0.0      both-halves+ 2/6  pooled +0.023R  n=1409
+      BTCUSD:-0.05/+0.19  ETHUSD:-0.04/-0.09  USOIL:+0.13/+0.04  EURUSD:+0.02/+0.03  GBPUSD:-0.08/+0.04  USDJPY:+0.10/-0.07
