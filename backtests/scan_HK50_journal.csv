@@ -1,0 +1,2 @@
+close_utc,open_utc,symbol,profile,magic,tag,dir,lot,entry,sl,r_price,r_atr,atr,spread,spread_r_pct,pnl_money,pnl_r,mfe_r,mae_r,hold_min,exit,tp1,htf,vol_regime,trend_regime,clock_hour,balance_after
+2025-08-29 14:27:40,2025-08-29 14:00:40,HK50,INDEX_US,580133,MIDAS_v4|SWPIV,S,8.50,25253.8,25299.6,45.8,1.794,25.5,5.0,10.92,-49.96,-1.000,0.681,0.945,27,SL,0,0,NORM,FLAT,17,4950.04
