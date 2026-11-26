@@ -1,0 +1,2 @@
+close_utc,open_utc,symbol,profile,magic,tag,dir,lot,entry,sl,r_price,r_atr,atr,spread,spread_r_pct,pnl_money,pnl_r,mfe_r,mae_r,hold_min,exit,tp1,htf,vol_regime,trend_regime,clock_hour,balance_after
+2026-03-09 08:03:40,2026-03-09 06:31:40,NZDCAD,FX,580124,MIDAS_v4|SWASIA,S,0.79,0.79781,0.79867,0.00086,1.574,0.00055,0.00009,10.47,-50.14,-1.000,1.384,0.930,92,SL,0,-1,NORM,WITH,9,4949.86

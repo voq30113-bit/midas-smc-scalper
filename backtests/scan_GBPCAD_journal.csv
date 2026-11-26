@@ -1,0 +1,3 @@
+close_utc,open_utc,symbol,profile,magic,tag,dir,lot,entry,sl,r_price,r_atr,atr,spread,spread_r_pct,pnl_money,pnl_r,mfe_r,mae_r,hold_min,exit,tp1,htf,vol_regime,trend_regime,clock_hour,balance_after
+2026-10-15 12:30:20,2026-10-15 12:24:20,GBPCAD,FX,580122,MIDAS_v4|SWPIV,L,0.56,1.88193,1.88097,0.00096,1.802,0.00053,0.00013,13.54,-37.85,-1.000,0.073,0.604,6,SL,0,1,NORM,WITH,15,4962.15
+2026-10-30 15:57:40,2026-10-30 12:30:40,GBPCAD,FX,580122,MIDAS_v4|SWPIV,S,0.52,1.87377,1.87509,0.00132,2.397,0.00055,0.00013,9.85,172.91,3.514,5.250,0.545,207,SL,1,-1,NORM,WITH,15,5135.06
