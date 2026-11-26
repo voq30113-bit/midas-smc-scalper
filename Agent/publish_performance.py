@@ -51,6 +51,8 @@ def collect():
         name = os.path.basename(p)[len("journal_"):-4]
         trades += read_journal(p, ("test:" if name.endswith("_TEST") else "live:") + name)
     for p in sorted(glob.glob(os.path.join(ROOT, "backtests", "*_journal.csv"))):
+        if os.path.basename(p).startswith("x2_"):          # exploratory sweeps stay local: they would bloat the published payload
+            continue
         trades += read_journal(p, "bt:" + os.path.basename(p)[:-len("_journal.csv")])
     for p in sorted(glob.glob(os.path.join(ROOT, "backtests", "*_report.json"))):
         name = os.path.basename(p)[:-len("_report.json")]
