@@ -1,0 +1,3 @@
+close_utc,open_utc,symbol,profile,magic,tag,dir,lot,entry,sl,r_price,r_atr,atr,spread,spread_r_pct,pnl_money,pnl_r,mfe_r,mae_r,hold_min,exit,tp1,htf,vol_regime,trend_regime,clock_hour,balance_after
+2025-04-09 10:49:20,2025-04-09 07:41:40,GBPCHF,FX,580116,MIDAS_v4|SWPIV,S,0.17,1.08133,1.08372,0.00239,1.711,0.00140,0.00016,6.69,26.06,0.542,1.874,0.820,187,SL,1,-1,HIGH,WITH,10,5026.06
+2025-04-28 11:26:40,2025-04-28 09:35:40,GBPCHF,FX,580116,MIDAS_v4|SWPIV,S,0.38,1.10703,1.10811,0.00108,1.490,0.00073,0.00016,14.81,-49.40,-0.998,0.954,0.852,111,SL,0,0,HIGH,FLAT,12,4976.66
